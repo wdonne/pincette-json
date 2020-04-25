@@ -1,5 +1,7 @@
 package net.pincette.json;
 
+import static java.lang.Double.NEGATIVE_INFINITY;
+import static java.lang.Double.POSITIVE_INFINITY;
 import static java.lang.String.join;
 import static java.time.Instant.ofEpochMilli;
 import static java.time.Instant.parse;
@@ -190,8 +192,20 @@ public class JsonUtil {
     return (JsonArray) value;
   }
 
+  public static double asDouble(final JsonValue value) {
+    return asNumber(value).doubleValue();
+  }
+
   public static Instant asInstant(final JsonValue value) {
     return parse(asString(value).getString());
+  }
+
+  public static int asInt(final JsonValue value) {
+    return asNumber(value).intValueExact();
+  }
+
+  public static long asLong(final JsonValue value) {
+    return asNumber(value).longValueExact();
   }
 
   public static JsonNumber asNumber(final JsonValue value) {
@@ -282,6 +296,10 @@ public class JsonUtil {
       return from((Map) value);
     }
 
+    if (value instanceof Stream) {
+      return from((Stream) value);
+    }
+
     if (value instanceof List) {
       return from((List) value);
     }
@@ -308,9 +326,11 @@ public class JsonUtil {
   }
 
   public static JsonArray from(final List<?> values) {
-    return values.stream()
-        .reduce(createArrayBuilder(), JsonUtil::addJsonField, (b1, b2) -> b1)
-        .build();
+    return from(values.stream());
+  }
+
+  public static JsonArray from(final Stream<?> values) {
+    return values.reduce(createArrayBuilder(), JsonUtil::addJsonField, (b1, b2) -> b1).build();
   }
 
   public static Optional<JsonStructure> from(final String json) {
@@ -425,6 +445,13 @@ public class JsonUtil {
         && net.pincette.util.Util.isDate(asString(value).getString());
   }
 
+  public static boolean isDouble(final JsonValue value) {
+    return isNumber(value)
+        && Optional.of(asNumber(value).doubleValue())
+            .filter(v -> v != NEGATIVE_INFINITY && v != POSITIVE_INFINITY)
+            .isPresent();
+  }
+
   public static boolean isEmail(final JsonValue value) {
     return value.getValueType() == JsonValue.ValueType.STRING
         && net.pincette.util.Util.isEmail(asString(value).getString());
@@ -433,6 +460,14 @@ public class JsonUtil {
   public static boolean isInstant(final JsonValue value) {
     return value.getValueType() == JsonValue.ValueType.STRING
         && net.pincette.util.Util.isInstant(asString(value).getString());
+  }
+
+  public static boolean isInt(final JsonValue value) {
+    return tryToGetSilent(() -> asNumber(value).intValueExact()).isPresent();
+  }
+
+  public static boolean isLong(final JsonValue value) {
+    return tryToGetSilent(() -> asNumber(value).longValueExact()).isPresent();
   }
 
   public static boolean isNull(final JsonValue value) {
@@ -535,11 +570,11 @@ public class JsonUtil {
     return set(obj, path, createValue(value));
   }
 
-  public static String string(final JsonStructure json) {
+  public static String string(final JsonValue json) {
     return string(json, false);
   }
 
-  public static String string(final JsonStructure json, final boolean pretty) {
+  public static String string(final JsonValue json, final boolean pretty) {
     final Map<String, Object> config = new HashMap<>();
     final StringWriter writer = new StringWriter();
 
