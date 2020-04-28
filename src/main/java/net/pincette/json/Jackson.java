@@ -15,9 +15,11 @@ import static net.pincette.util.StreamUtil.stream;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.ValueNode;
 import java.util.Objects;
 import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
+import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 
@@ -40,7 +42,7 @@ public class Jackson {
       case NULL:
         return instance.nullNode();
       case NUMBER:
-        return instance.numberNode(asNumber(json).bigDecimalValue());
+        return from(asNumber(json));
       case OBJECT:
         return from(json.asJsonObject());
       case STRING:
@@ -50,6 +52,12 @@ public class Jackson {
       default:
         return null;
     }
+  }
+
+  private static ValueNode from(final JsonNumber number) {
+    return number.isIntegral()
+        ? instance.numberNode(number.longValue())
+        : instance.numberNode(number.bigDecimalValue());
   }
 
   public static ObjectNode from(final JsonObject json) {
@@ -78,7 +86,7 @@ public class Jackson {
       case NULL:
         return NULL;
       case NUMBER:
-        return createValue(json.decimalValue());
+        return toNumber(json);
       case OBJECT:
         return to((ObjectNode) json);
       case STRING:
@@ -105,5 +113,11 @@ public class Jackson {
         .filter(Objects::nonNull)
         .reduce(createArrayBuilder(), JsonArrayBuilder::add, (b1, b2) -> b1)
         .build();
+  }
+
+  private static JsonValue toNumber(final JsonNode json) {
+    return json.isIntegralNumber()
+        ? createValue(json.longValue())
+        : createValue(json.decimalValue());
   }
 }
