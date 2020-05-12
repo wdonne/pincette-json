@@ -7,7 +7,7 @@
   <groupId>net.pincette</groupId>
   <artifactId>pincette-json</artifactId>
   <packaging>jar</packaging>
-  <version>1.2.1</version>
+  <version>1.2.2</version>
   <name>pincette-json</name>
   <description>General utilities</description>
   <url>https://github.com/wdonne/pincette-json</url>
@@ -57,7 +57,7 @@
     <dependency>
       <groupId>net.pincette</groupId>
       <artifactId>pincette-common</artifactId>
-      <version>1.7.1</version>
+      <version>1.7.2</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
@@ -120,10 +120,10 @@
           </additionalJOptions>
           <links>
             <link>http://docs.oracle.com/javase/8/docs/api/</link>
-            <link>https://www.javadoc.io/doc/net.pincette/pincette-common/1.7/</link>
+            <link>https://www.javadoc.io/doc/net.pincette/pincette-common/1.7.2/</link>
             <link>https://www.javadoc.io/doc/javax.json/javax.json-api/1.1.4/</link>
-            <link>https://www.javadoc.io/doc/com.fasterxml.jackson.dataformat/jackson-core/2.10.3/</link>
-            <link>https://www.javadoc.io/doc/com.fasterxml.jackson.dataformat/jackson-databind/2.10.3/</link>
+            <link>https://www.javadoc.io/doc/com.fasterxml.jackson.dataformat/jackson-core/2.11.0/</link>
+            <link>https://www.javadoc.io/doc/com.fasterxml.jackson.dataformat/jackson-databind/2.11.0/</link>
           </links>
         </configuration>
       </plugin>
