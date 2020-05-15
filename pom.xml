@@ -7,7 +7,7 @@
   <groupId>net.pincette</groupId>
   <artifactId>pincette-json</artifactId>
   <packaging>jar</packaging>
-  <version>1.2.2</version>
+  <version>1.3</version>
   <name>pincette-json</name>
   <description>General utilities</description>
   <url>https://github.com/wdonne/pincette-json</url>
@@ -124,6 +124,7 @@
             <link>https://www.javadoc.io/doc/javax.json/javax.json-api/1.1.4/</link>
             <link>https://www.javadoc.io/doc/com.fasterxml.jackson.dataformat/jackson-core/2.11.0/</link>
             <link>https://www.javadoc.io/doc/com.fasterxml.jackson.dataformat/jackson-databind/2.11.0/</link>
+            <link>https://www.javadoc.io/doc/com.schibsted.spt.data/jslt/0.1.9/</link>
           </links>
         </configuration>
       </plugin>
