@@ -1,11 +1,18 @@
 package net.pincette.json;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Arrays.stream;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
+import static javax.json.Json.createArrayBuilder;
 import static net.pincette.json.Jackson.from;
 import static net.pincette.json.Jackson.to;
+import static net.pincette.json.JsonUtil.string;
+import static net.pincette.util.Collections.union;
 import static net.pincette.util.Util.tryToGetRethrow;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -19,11 +26,18 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.UnaryOperator;
+import java.util.logging.Logger;
+import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
+import net.pincette.function.SideEffect;
 
 /**
  * JSLT utilities.
@@ -32,7 +46,74 @@ import javax.json.JsonValue;
  * @since 1.1
  */
 public class Jslt {
+  private static Set<CustomFunction> customFunctions = new HashSet<>();
+
   private Jslt() {}
+
+  /**
+   * Wraps a lambda in a JSLT function.
+   *
+   * @param name the name of the function.
+   * @param minArguments the minimum number of arguments.
+   * @param maxArguments the maximum number of arguments.
+   * @param function the lambda.
+   * @return The JSLT function.
+   * @since 1.3.1
+   */
+  public static Function function(
+      final String name,
+      final int minArguments,
+      final int maxArguments,
+      final java.util.function.Function<JsonArray, JsonValue> function) {
+    return new CustomFunction(
+        name,
+        minArguments,
+        maxArguments,
+        (input, arguments) ->
+            from(
+                function.apply(
+                    stream(arguments)
+                        .reduce(createArrayBuilder(), (b, v) -> b.add(to(v)), (b1, b2) -> b1)
+                        .build())));
+  }
+
+  /**
+   * Adds custom functions globally. Later registrations override earlier ones based on the function
+   * names. All created transformers will have access to all registered functions. Functions passed
+   * to transformers will override registered ones.
+   *
+   * @param functions the given custom functions.
+   * @since 1.3.1
+   */
+  public static void registerCustomFunctions(final Collection<Function> functions) {
+    functions.forEach(f -> customFunctions.add(new CustomFunction(f)));
+  }
+
+  private static Set<CustomFunction> toCustom(final Collection<Function> functions) {
+    return functions.stream().map(CustomFunction::new).collect(toSet());
+  }
+
+  private static Collection<Function> toFunction(final Set<CustomFunction> functions) {
+    return functions.stream().map(f -> (Function) f).collect(toList());
+  }
+
+  /**
+   * This function, which is called "trace" in JSLT, accepts one argument. It sends it to <code>
+   * logger</code> with level <code>INFO</code> and then returns it.
+   *
+   * @param logger the given logger.
+   * @return The generated function.
+   * @since 1.3.1
+   */
+  public static Function trace(final Logger logger) {
+    return function(
+        "trace",
+        1,
+        1,
+        array ->
+            SideEffect.<JsonValue>run(() -> logger.info(string(array.get(0))))
+                .andThenGet(() -> array.get(0)));
+  }
 
   /**
    * Returns a function that transforms JSON using a JSLT file.
@@ -63,7 +144,7 @@ public class Jslt {
    *
    * @param resource the resource in the classpath that contains the JSLT file.
    * @param functions a collection of custom functions. It may be <code>null</code>.
-   * @param variables pre-set variables.
+   * @param variables pre-set variables. It may be <code>null</code>.
    * @return The transformer function.
    * @since 1.2.3
    */
@@ -103,7 +184,7 @@ public class Jslt {
    *
    * @param file the JSLT file.
    * @param functions a collection of custom functions. It may be <code>null</code>.
-   * @param variables pre-set variables.
+   * @param variables pre-set variables. It may be <code>null</code>.
    * @return The transformer function.
    * @since 1.2.3
    */
@@ -144,7 +225,7 @@ public class Jslt {
    *
    * @param in the JSLT input stream.
    * @param functions a collection of custom functions. It may be <code>null</code>.
-   * @param variables pre-set variables.
+   * @param variables pre-set variables. It may be <code>null</code>.
    * @return The transformer function.
    * @since 1.2.3
    */
@@ -184,7 +265,7 @@ public class Jslt {
    *
    * @param reader the JSLT reader.
    * @param functions a collection of custom functions. It may be <code>null</code>.
-   * @param variables pre-set variables.
+   * @param variables pre-set variables. It may be <code>null</code>.
    * @return The transformer function.
    * @since 1.2.3
    */
@@ -194,7 +275,11 @@ public class Jslt {
       final Map<String, JsonValue> variables) {
     final Parser parser = new Parser(reader);
     final Expression jslt =
-        (functions != null ? parser.withFunctions(functions) : parser).compile();
+        parser
+            .withFunctions(
+                toFunction(
+                    union(customFunctions, functions != null ? toCustom(functions) : emptySet())))
+            .compile();
     final Map<String, JsonNode> vars = variables(variables);
 
     return json ->
@@ -225,10 +310,79 @@ public class Jslt {
    */
   public static UnaryOperator<JsonObject> transformerString(
       final String jslt, final Collection<Function> functions) {
-    return transformer(new StringReader(jslt), functions);
+    return transformer(jslt, functions, emptyMap());
+  }
+
+  /**
+   * Returns a function that transforms JSON using a JSLT file.
+   *
+   * @param jslt the JSLT script.
+   * @param functions a collection of custom functions. It may be <code>null</code>.
+   * @param variables pre-set variables. It may be <code>null</code>.
+   * @return The transformer function.
+   * @since 1.3.1
+   */
+  public static UnaryOperator<JsonObject> transformerString(
+      final String jslt,
+      final Collection<Function> functions,
+      final Map<String, JsonValue> variables) {
+    return transformer(new StringReader(jslt), functions, variables);
   }
 
   private static Map<String, JsonNode> variables(final Map<String, JsonValue> variables) {
-    return variables.entrySet().stream().collect(toMap(Entry::getKey, e -> from(e.getValue())));
+    return ofNullable(variables)
+        .map(v -> v.entrySet().stream().collect(toMap(Entry::getKey, e -> from(e.getValue()))))
+        .orElseGet(Collections::emptyMap);
+  }
+
+  private static class CustomFunction implements Function {
+    private final BiFunction<JsonNode, JsonNode[], JsonNode> function;
+    private final int minArguments;
+    private final int maxArguments;
+    private final String name;
+
+    private CustomFunction(
+        final String name,
+        final int minArguments,
+        final int maxArguments,
+        final BiFunction<JsonNode, JsonNode[], JsonNode> function) {
+      this.name = name;
+      this.minArguments = minArguments;
+      this.maxArguments = maxArguments;
+      this.function = function;
+    }
+
+    private CustomFunction(final Function delegate) {
+      this.name = delegate.getName();
+      this.minArguments = delegate.getMinArguments();
+      this.maxArguments = delegate.getMaxArguments();
+      this.function = delegate::call;
+    }
+
+    public JsonNode call(final JsonNode input, final JsonNode[] arguments) {
+      return function.apply(input, arguments);
+    }
+
+    @Override
+    public boolean equals(final Object other) {
+      return other instanceof CustomFunction && ((CustomFunction) other).name.equals(name);
+    }
+
+    public String getName() {
+      return name;
+    }
+
+    public int getMinArguments() {
+      return minArguments;
+    }
+
+    public int getMaxArguments() {
+      return maxArguments;
+    }
+
+    @Override
+    public int hashCode() {
+      return name.hashCode();
+    }
   }
 }

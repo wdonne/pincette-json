@@ -7,7 +7,7 @@
   <groupId>net.pincette</groupId>
   <artifactId>pincette-json</artifactId>
   <packaging>jar</packaging>
-  <version>1.3</version>
+  <version>1.3.1</version>
   <name>pincette-json</name>
   <description>General utilities</description>
   <url>https://github.com/wdonne/pincette-json</url>
