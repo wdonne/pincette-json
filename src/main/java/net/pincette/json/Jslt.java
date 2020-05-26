@@ -1,5 +1,6 @@
 package net.pincette.json;
 
+import static java.lang.Math.round;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
 import static java.util.Collections.emptyMap;
@@ -9,6 +10,7 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static javax.json.Json.createArrayBuilder;
+import static javax.json.JsonValue.NULL;
 import static net.pincette.json.Jackson.from;
 import static net.pincette.json.Jackson.to;
 import static net.pincette.json.JsonUtil.string;
@@ -25,15 +27,18 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.UnaryOperator;
 import java.util.logging.Logger;
+import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
@@ -75,6 +80,29 @@ public class Jslt {
                     stream(arguments)
                         .reduce(createArrayBuilder(), (b, v) -> b.add(to(v)), (b1, b2) -> b1)
                         .build())));
+  }
+
+  /**
+   * This custom function is called "parse-iso-instant". It uses <code>java.time.Instant.parse
+   * </code> to parse its only argument and returns the epoch seconds value.
+   *
+   * @return The generated function.
+   * @since 1.3.2
+   */
+  public static Function parseIsoInstant() {
+    return function(
+        "parse-iso-instant",
+        1,
+        1,
+        array ->
+            Optional.of(array.get(0))
+                .filter(JsonUtil::isInstant)
+                .map(JsonUtil::asInstant)
+                .map(Instant::toEpochMilli)
+                .map(v -> round((double) v / (double) 1000))
+                .map(Json::createValue)
+                .map(v -> (JsonValue) v)
+                .orElse(NULL));
   }
 
   /**
