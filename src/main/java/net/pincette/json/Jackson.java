@@ -1,14 +1,14 @@
 package net.pincette.json;
 
 import static com.fasterxml.jackson.databind.node.JsonNodeFactory.instance;
-import static javax.json.Json.createArrayBuilder;
-import static javax.json.Json.createObjectBuilder;
-import static javax.json.Json.createValue;
 import static javax.json.JsonValue.FALSE;
 import static javax.json.JsonValue.NULL;
 import static javax.json.JsonValue.TRUE;
 import static net.pincette.json.JsonUtil.asNumber;
 import static net.pincette.json.JsonUtil.asString;
+import static net.pincette.json.JsonUtil.createArrayBuilder;
+import static net.pincette.json.JsonUtil.createObjectBuilder;
+import static net.pincette.json.JsonUtil.createValue;
 import static net.pincette.util.Pair.pair;
 import static net.pincette.util.StreamUtil.stream;
 

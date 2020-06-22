@@ -10,13 +10,9 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Stream.concat;
 import static java.util.stream.Stream.of;
-import static javax.json.Json.createArrayBuilder;
-import static javax.json.Json.createObjectBuilder;
-import static javax.json.Json.createParserFactory;
-import static javax.json.Json.createReader;
-import static javax.json.Json.createWriterFactory;
 import static javax.json.JsonValue.ValueType.FALSE;
 import static javax.json.JsonValue.ValueType.TRUE;
+import static javax.json.spi.JsonProvider.provider;
 import static javax.xml.stream.XMLOutputFactory.newInstance;
 import static net.pincette.json.Transform.addTransformer;
 import static net.pincette.json.Transform.setTransformer;
@@ -33,8 +29,11 @@ import static net.pincette.util.Util.tryToGetSilent;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
@@ -53,14 +52,27 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonException;
+import javax.json.JsonMergePatch;
 import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
+import javax.json.JsonPatch;
+import javax.json.JsonPatchBuilder;
+import javax.json.JsonPointer;
+import javax.json.JsonReader;
+import javax.json.JsonReaderFactory;
 import javax.json.JsonString;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
+import javax.json.JsonWriter;
+import javax.json.JsonWriterFactory;
+import javax.json.spi.JsonProvider;
 import javax.json.stream.JsonGenerator;
+import javax.json.stream.JsonGeneratorFactory;
+import javax.json.stream.JsonParser;
+import javax.json.stream.JsonParserFactory;
 import javax.xml.stream.XMLEventWriter;
 import net.pincette.function.SideEffect;
 import net.pincette.util.Pair;
@@ -77,6 +89,7 @@ public class JsonUtil {
           value.getValueType() == JsonValue.ValueType.NUMBER
               ? asNumber(value).longValue()
               : toString(value);
+  private static final JsonProvider provider = provider();
 
   private JsonUtil() {}
 
@@ -259,6 +272,94 @@ public class JsonUtil {
     return array.stream().filter(retain).reduce(builder, JsonArrayBuilder::add, (b1, b2) -> b1);
   }
 
+  public static JsonArrayBuilder createArrayBuilder() {
+    return provider.createArrayBuilder();
+  }
+
+  public static JsonArrayBuilder createArrayBuilder(final Collection<?> collection) {
+    return provider.createArrayBuilder(collection);
+  }
+
+  public static JsonArrayBuilder createArrayBuilder(final JsonArray array) {
+    return provider.createArrayBuilder(array);
+  }
+
+  public static JsonBuilderFactory createBuilderFactory(final Map<String, ?> config) {
+    return provider.createBuilderFactory(config);
+  }
+
+  public static JsonPatch createDiff(final JsonStructure source, final JsonStructure target) {
+    return provider.createDiff(source, target);
+  }
+
+  public static JsonGenerator createGenerator(final OutputStream out) {
+    return provider.createGenerator(out);
+  }
+
+  public static JsonGenerator createGenerator(final Writer writer) {
+    return provider.createGenerator(writer);
+  }
+
+  public static JsonGeneratorFactory createGeneratorFactory(final Map<String, ?> config) {
+    return provider.createGeneratorFactory(config);
+  }
+
+  public static JsonMergePatch createMergeDiff(final JsonValue source, final JsonValue target) {
+    return provider.createMergeDiff(source, target);
+  }
+
+  public static JsonObjectBuilder createObjectBuilder() {
+    return provider.createObjectBuilder();
+  }
+
+  public static JsonObjectBuilder createObjectBuilder(final Map<String, Object> map) {
+    return provider.createObjectBuilder(map);
+  }
+
+  public static JsonObjectBuilder createObjectBuilder(final JsonObject object) {
+    return provider.createObjectBuilder(object);
+  }
+
+  public static JsonParser createParser(final InputStream in) {
+    return provider.createParser(in);
+  }
+
+  public static JsonParser createParser(final Reader reader) {
+    return provider.createParser(reader);
+  }
+
+  public static JsonParserFactory createParserFactory(final Map<String, ?> config) {
+    return provider.createParserFactory(config);
+  }
+
+  public static JsonPatch createPatch(final JsonArray array) {
+    return provider.createPatch(array);
+  }
+
+  public static JsonPatchBuilder createPatchBuilder() {
+    return provider.createPatchBuilder();
+  }
+
+  public static JsonPatchBuilder createPatchBuilder(final JsonArray array) {
+    return provider.createPatchBuilder(array);
+  }
+
+  public static JsonPointer createPointer(final String jsonPointer) {
+    return provider.createPointer(jsonPointer);
+  }
+
+  public static JsonReader createReader(final InputStream in) {
+    return provider.createReader(in);
+  }
+
+  public static JsonReader createReader(final Reader reader) {
+    return provider.createReader(reader);
+  }
+
+  public static JsonReaderFactory createReaderFactory(final Map<String, ?> config) {
+    return provider.createReaderFactory(config);
+  }
+
   public static JsonValue createValue(final Object value) {
     if (value == null) {
       return JsonValue.NULL;
@@ -269,27 +370,27 @@ public class JsonUtil {
     }
 
     if (value instanceof Integer) {
-      return javax.json.Json.createValue((int) value);
+      return provider.createValue((int) value);
     }
 
     if (value instanceof Long) {
-      return javax.json.Json.createValue((long) value);
+      return provider.createValue((long) value);
     }
 
     if (value instanceof BigInteger) {
-      return javax.json.Json.createValue((BigInteger) value);
+      return provider.createValue((BigInteger) value);
     }
 
     if (value instanceof BigDecimal) {
-      return javax.json.Json.createValue((BigDecimal) value);
+      return provider.createValue((BigDecimal) value);
     }
 
     if (value instanceof Double || value instanceof Float) {
-      return javax.json.Json.createValue(((Number) value).doubleValue());
+      return provider.createValue(((Number) value).doubleValue());
     }
 
     if (value instanceof Date) {
-      return javax.json.Json.createValue(ofEpochMilli(((Date) value).getTime()).toString());
+      return provider.createValue(ofEpochMilli(((Date) value).getTime()).toString());
     }
 
     if (value instanceof Map) {
@@ -304,7 +405,19 @@ public class JsonUtil {
       return from((List) value);
     }
 
-    return javax.json.Json.createValue(value.toString());
+    return provider.createValue(value.toString());
+  }
+
+  public static JsonWriter createWriter(final OutputStream out) {
+    return provider.createWriter(out);
+  }
+
+  public static JsonWriter createWriter(final Writer writer) {
+    return provider.createWriter(writer);
+  }
+
+  public static JsonWriterFactory createWriterFactory(final Map<String, ?> config) {
+    return provider.createWriterFactory(config);
   }
 
   public static JsonArray emptyArray() {

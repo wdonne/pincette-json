@@ -1,7 +1,7 @@
 package net.pincette.json.filter;
 
-import static javax.json.Json.createArrayBuilder;
-import static javax.json.Json.createObjectBuilder;
+import static net.pincette.json.JsonUtil.createArrayBuilder;
+import static net.pincette.json.JsonUtil.createObjectBuilder;
 
 import java.util.ArrayDeque;
 import java.util.Deque;

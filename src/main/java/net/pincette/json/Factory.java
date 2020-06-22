@@ -1,8 +1,8 @@
 package net.pincette.json;
 
 import static java.util.Arrays.stream;
-import static javax.json.Json.createArrayBuilder;
-import static javax.json.Json.createObjectBuilder;
+import static net.pincette.json.JsonUtil.createArrayBuilder;
+import static net.pincette.json.JsonUtil.createObjectBuilder;
 import static net.pincette.json.JsonUtil.createValue;
 import static net.pincette.util.Pair.pair;
 

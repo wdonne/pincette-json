@@ -2,7 +2,6 @@ package net.pincette.json.filter;
 
 import static java.util.stream.Stream.empty;
 import static java.util.stream.Stream.of;
-import static javax.json.Json.createValue;
 import static javax.json.JsonValue.FALSE;
 import static javax.json.JsonValue.NULL;
 import static javax.json.JsonValue.TRUE;
@@ -10,6 +9,7 @@ import static javax.json.stream.JsonParser.Event.END_ARRAY;
 import static javax.json.stream.JsonParser.Event.END_OBJECT;
 import static javax.json.stream.JsonParser.Event.START_ARRAY;
 import static javax.json.stream.JsonParser.Event.START_OBJECT;
+import static net.pincette.json.JsonUtil.createValue;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
