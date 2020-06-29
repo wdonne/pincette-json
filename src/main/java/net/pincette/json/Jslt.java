@@ -36,9 +36,9 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.logging.Logger;
-import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
@@ -51,6 +51,7 @@ import net.pincette.function.SideEffect;
  * @since 1.1
  */
 public class Jslt {
+  private static final String RESOURCE = "resource:";
   private static Set<CustomFunction> customFunctions = new HashSet<>();
 
   private Jslt() {}
@@ -99,9 +100,8 @@ public class Jslt {
                 .filter(JsonUtil::isInstant)
                 .map(JsonUtil::asInstant)
                 .map(Instant::toEpochMilli)
-                .map(v -> round((double) v / (double) 1000))
-                .map(Json::createValue)
-                .map(v -> (JsonValue) v)
+                .map(v -> round(v / 1000.0))
+                .map(JsonUtil::createValue)
                 .orElse(NULL));
   }
 
@@ -144,7 +144,7 @@ public class Jslt {
   }
 
   /**
-   * Returns a function that transforms JSON using a JSLT file.
+   * Returns a function that transforms JSON using a JSLT script.
    *
    * @param resource the resource in the classpath that contains the JSLT file.
    * @return The transformer function.
@@ -155,7 +155,7 @@ public class Jslt {
   }
 
   /**
-   * Returns a function that transforms JSON using a JSLT file.
+   * Returns a function that transforms JSON using a JSLT script.
    *
    * @param resource the resource in the classpath that contains the JSLT file.
    * @param functions a collection of custom functions. It may be <code>null</code>.
@@ -168,7 +168,7 @@ public class Jslt {
   }
 
   /**
-   * Returns a function that transforms JSON using a JSLT file.
+   * Returns a function that transforms JSON using a JSLT script.
    *
    * @param resource the resource in the classpath that contains the JSLT file.
    * @param functions a collection of custom functions. It may be <code>null</code>.
@@ -184,7 +184,7 @@ public class Jslt {
   }
 
   /**
-   * Returns a function that transforms JSON using a JSLT file.
+   * Returns a function that transforms JSON using a JSLT script.
    *
    * @param file the JSLT file.
    * @return The transformer function.
@@ -195,7 +195,7 @@ public class Jslt {
   }
 
   /**
-   * Returns a function that transforms JSON using a JSLT file.
+   * Returns a function that transforms JSON using a JSLT script.
    *
    * @param file the JSLT file.
    * @param functions a collection of custom functions. It may be <code>null</code>.
@@ -208,7 +208,7 @@ public class Jslt {
   }
 
   /**
-   * Returns a function that transforms JSON using a JSLT file.
+   * Returns a function that transforms JSON using a JSLT script.
    *
    * @param file the JSLT file.
    * @param functions a collection of custom functions. It may be <code>null</code>.
@@ -225,7 +225,7 @@ public class Jslt {
   }
 
   /**
-   * Returns a function that transforms JSON using a JSLT file.
+   * Returns a function that transforms JSON using a JSLT script.
    *
    * @param in the JSLT input stream.
    * @return The transformer function.
@@ -236,7 +236,7 @@ public class Jslt {
   }
 
   /**
-   * Returns a function that transforms JSON using a JSLT file.
+   * Returns a function that transforms JSON using a JSLT script.
    *
    * @param in the JSLT input stream.
    * @param functions a collection of custom functions. It may be <code>null</code>.
@@ -249,7 +249,7 @@ public class Jslt {
   }
 
   /**
-   * Returns a function that transforms JSON using a JSLT file.
+   * Returns a function that transforms JSON using a JSLT script.
    *
    * @param in the JSLT input stream.
    * @param functions a collection of custom functions. It may be <code>null</code>.
@@ -265,7 +265,7 @@ public class Jslt {
   }
 
   /**
-   * Returns a function that transforms JSON using a JSLT file.
+   * Returns a function that transforms JSON using a JSLT script.
    *
    * @param reader the JSLT reader.
    * @return The transformer function.
@@ -276,7 +276,7 @@ public class Jslt {
   }
 
   /**
-   * Returns a function that transforms JSON using a JSLT file.
+   * Returns a function that transforms JSON using a JSLT script.
    *
    * @param reader the JSLT reader.
    * @param functions a collection of custom functions. It may be <code>null</code>.
@@ -289,7 +289,7 @@ public class Jslt {
   }
 
   /**
-   * Returns a function that transforms JSON using a JSLT file.
+   * Returns a function that transforms JSON using a JSLT script.
    *
    * @param reader the JSLT reader.
    * @param functions a collection of custom functions. It may be <code>null</code>.
@@ -318,7 +318,7 @@ public class Jslt {
   }
 
   /**
-   * Returns a function that transforms JSON using a JSLT file.
+   * Returns a function that transforms JSON using a JSLT script.
    *
    * @param jslt the JSLT script.
    * @return The transformer function.
@@ -329,7 +329,7 @@ public class Jslt {
   }
 
   /**
-   * Returns a function that transforms JSON using a JSLT file.
+   * Returns a function that transforms JSON using a JSLT script.
    *
    * @param jslt the JSLT script.
    * @param functions a collection of custom functions. It may be <code>null</code>.
@@ -338,11 +338,11 @@ public class Jslt {
    */
   public static UnaryOperator<JsonObject> transformerString(
       final String jslt, final Collection<Function> functions) {
-    return transformer(jslt, functions, emptyMap());
+    return transformerString(jslt, functions, emptyMap());
   }
 
   /**
-   * Returns a function that transforms JSON using a JSLT file.
+   * Returns a function that transforms JSON using a JSLT script.
    *
    * @param jslt the JSLT script.
    * @param functions a collection of custom functions. It may be <code>null</code>.
@@ -355,6 +355,60 @@ public class Jslt {
       final Collection<Function> functions,
       final Map<String, JsonValue> variables) {
     return transformer(new StringReader(jslt), functions, variables);
+  }
+
+  /**
+   * Returns a function that transforms JSON using a JSLT script.
+   *
+   * @param jslt the JSLT script. If it starts with "resource:" the script is loaded as a class path
+   *     resource. If it denotes an existing file it will be loaded from that file. Otherwise it is
+   *     interpreted as a JSLT script.
+   * @return The transformer function.
+   * @since 1.3.4
+   */
+  public static UnaryOperator<JsonObject> tryTransformer(final String jslt) {
+    return tryTransformer(jslt, null);
+  }
+
+  /**
+   * Returns a function that transforms JSON using a JSLT script.
+   *
+   * @param jslt the JSLT script. If it starts with "resource:" the script is loaded as a class path
+   *     resource. If it denotes an existing file it will be loaded from that file. Otherwise it is
+   *     interpreted as a JSLT script.
+   * @param functions a collection of custom functions. It may be <code>null</code>.
+   * @return The transformer function.
+   * @since 1.3.4
+   */
+  public static UnaryOperator<JsonObject> tryTransformer(
+      final String jslt, final Collection<Function> functions) {
+    return tryTransformer(jslt, functions, emptyMap());
+  }
+
+  /**
+   * Returns a function that transforms JSON using a JSLT script.
+   *
+   * @param jslt the JSLT script. If it starts with "resource:" the script is loaded as a class path
+   *     resource. If it denotes an existing file it will be loaded from that file. Otherwise it is
+   *     interpreted as a JSLT script.
+   * @param functions a collection of custom functions. It may be <code>null</code>.
+   * @param variables pre-set variables. It may be <code>null</code>.
+   * @return The transformer function.
+   * @since 1.3.4
+   */
+  public static UnaryOperator<JsonObject> tryTransformer(
+      final String jslt,
+      final Collection<Function> functions,
+      final Map<String, JsonValue> variables) {
+    final Supplier<UnaryOperator<JsonObject>> tryFile =
+        () ->
+            new File(jslt).exists()
+                ? transformer(new File(jslt), functions, variables)
+                : transformerString(jslt, functions, variables);
+
+    return jslt.startsWith(RESOURCE)
+        ? transformer(jslt.substring(RESOURCE.length()), functions, variables)
+        : tryFile.get();
   }
 
   private static Map<String, JsonNode> variables(final Map<String, JsonValue> variables) {
