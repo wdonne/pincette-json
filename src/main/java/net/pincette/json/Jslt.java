@@ -21,6 +21,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.schibsted.spt.data.jslt.Expression;
 import com.schibsted.spt.data.jslt.Function;
 import com.schibsted.spt.data.jslt.Parser;
+import com.schibsted.spt.data.jslt.ResourceResolver;
+import com.schibsted.spt.data.jslt.impl.ClasspathResourceResolver;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -180,7 +182,26 @@ public class Jslt {
       final String resource,
       final Collection<Function> functions,
       final Map<String, JsonValue> variables) {
-    return transformer(Jslt.class.getResourceAsStream(resource), functions, variables);
+    return transformer(resource, functions, variables, null);
+  }
+
+  /**
+   * Returns a function that transforms JSON using a JSLT script.
+   *
+   * @param resource the resource in the classpath that contains the JSLT file.
+   * @param functions a collection of custom functions. It may be <code>null</code>.
+   * @param variables pre-set variables. It may be <code>null</code>.
+   * @param resolver a resolver for imported modules. It may be <code>null</code> in which case the
+   *     classpath resolver is used.
+   * @return The transformer function.
+   * @since 1.3.5
+   */
+  public static UnaryOperator<JsonObject> transformer(
+      final String resource,
+      final Collection<Function> functions,
+      final Map<String, JsonValue> variables,
+      final ResourceResolver resolver) {
+    return transformer(Jslt.class.getResourceAsStream(resource), functions, variables, resolver);
   }
 
   /**
@@ -220,8 +241,30 @@ public class Jslt {
       final File file,
       final Collection<Function> functions,
       final Map<String, JsonValue> variables) {
+    return transformer(file, functions, variables, null);
+  }
+
+  /**
+   * Returns a function that transforms JSON using a JSLT script.
+   *
+   * @param file the JSLT file.
+   * @param functions a collection of custom functions. It may be <code>null</code>.
+   * @param variables pre-set variables. It may be <code>null</code>.
+   * @param resolver a resolver for imported modules. It may be <code>null</code> in which case the
+   *     classpath resolver is used.
+   * @return The transformer function.
+   * @since 1.3.5
+   */
+  public static UnaryOperator<JsonObject> transformer(
+      final File file,
+      final Collection<Function> functions,
+      final Map<String, JsonValue> variables,
+      final ResourceResolver resolver) {
     return transformer(
-        tryToGetRethrow(() -> new FileInputStream(file)).orElse(null), functions, variables);
+        tryToGetRethrow(() -> new FileInputStream(file)).orElse(null),
+        functions,
+        variables,
+        resolver);
   }
 
   /**
@@ -261,7 +304,26 @@ public class Jslt {
       final InputStream in,
       final Collection<Function> functions,
       final Map<String, JsonValue> variables) {
-    return transformer(new InputStreamReader(in, UTF_8), functions, variables);
+    return transformer(in, functions, variables, null);
+  }
+
+  /**
+   * Returns a function that transforms JSON using a JSLT script.
+   *
+   * @param in the JSLT input stream.
+   * @param functions a collection of custom functions. It may be <code>null</code>.
+   * @param variables pre-set variables. It may be <code>null</code>.
+   * @param resolver a resolver for imported modules. It may be <code>null</code> in which case the
+   *     classpath resolver is used.
+   * @return The transformer function.
+   * @since 1.3.5
+   */
+  public static UnaryOperator<JsonObject> transformer(
+      final InputStream in,
+      final Collection<Function> functions,
+      final Map<String, JsonValue> variables,
+      final ResourceResolver resolver) {
+    return transformer(new InputStreamReader(in, UTF_8), functions, variables, resolver);
   }
 
   /**
@@ -301,12 +363,32 @@ public class Jslt {
       final Reader reader,
       final Collection<Function> functions,
       final Map<String, JsonValue> variables) {
+    return transformer(reader, functions, variables, null);
+  }
+
+  /**
+   * Returns a function that transforms JSON using a JSLT script.
+   *
+   * @param reader the JSLT reader.
+   * @param functions a collection of custom functions. It may be <code>null</code>.
+   * @param variables pre-set variables. It may be <code>null</code>.
+   * @param resolver a resolver for imported modules. It may be <code>null</code> in which case the
+   *     classpath resolver is used.
+   * @return The transformer function.
+   * @since 1.3.5
+   */
+  public static UnaryOperator<JsonObject> transformer(
+      final Reader reader,
+      final Collection<Function> functions,
+      final Map<String, JsonValue> variables,
+      final ResourceResolver resolver) {
     final Parser parser = new Parser(reader);
     final Expression jslt =
         parser
             .withFunctions(
                 toFunction(
                     union(customFunctions, functions != null ? toCustom(functions) : emptySet())))
+            .withResourceResolver(resolver != null ? resolver : new ClasspathResourceResolver())
             .compile();
     final Map<String, JsonNode> vars = variables(variables);
 
@@ -354,7 +436,26 @@ public class Jslt {
       final String jslt,
       final Collection<Function> functions,
       final Map<String, JsonValue> variables) {
-    return transformer(new StringReader(jslt), functions, variables);
+    return transformerString(jslt, functions, variables, null);
+  }
+
+  /**
+   * Returns a function that transforms JSON using a JSLT script.
+   *
+   * @param jslt the JSLT script.
+   * @param functions a collection of custom functions. It may be <code>null</code>.
+   * @param variables pre-set variables. It may be <code>null</code>.
+   * @param resolver a resolver for imported modules. It may be <code>null</code> in which case the
+   *     classpath resolver is used.
+   * @return The transformer function.
+   * @since 1.3.5
+   */
+  public static UnaryOperator<JsonObject> transformerString(
+      final String jslt,
+      final Collection<Function> functions,
+      final Map<String, JsonValue> variables,
+      final ResourceResolver resolver) {
+    return transformer(new StringReader(jslt), functions, variables, resolver);
   }
 
   /**
@@ -400,14 +501,35 @@ public class Jslt {
       final String jslt,
       final Collection<Function> functions,
       final Map<String, JsonValue> variables) {
+    return tryTransformer(jslt, functions, variables, null);
+  }
+
+  /**
+   * Returns a function that transforms JSON using a JSLT script.
+   *
+   * @param jslt the JSLT script. If it starts with "resource:" the script is loaded as a class path
+   *     resource. If it denotes an existing file it will be loaded from that file. Otherwise it is
+   *     interpreted as a JSLT script.
+   * @param functions a collection of custom functions. It may be <code>null</code>.
+   * @param variables pre-set variables. It may be <code>null</code>.
+   * @param resolver a resolver for imported modules. It may be <code>null</code> in which case the
+   *     classpath resolver is used.
+   * @return The transformer function.
+   * @since 1.3.5
+   */
+  public static UnaryOperator<JsonObject> tryTransformer(
+      final String jslt,
+      final Collection<Function> functions,
+      final Map<String, JsonValue> variables,
+      final ResourceResolver resolver) {
     final Supplier<UnaryOperator<JsonObject>> tryFile =
         () ->
             new File(jslt).exists()
-                ? transformer(new File(jslt), functions, variables)
-                : transformerString(jslt, functions, variables);
+                ? transformer(new File(jslt), functions, variables, resolver)
+                : transformerString(jslt, functions, variables, resolver);
 
     return jslt.startsWith(RESOURCE)
-        ? transformer(jslt.substring(RESOURCE.length()), functions, variables)
+        ? transformer(jslt.substring(RESOURCE.length()), functions, variables, resolver)
         : tryFile.get();
   }
 
@@ -465,6 +587,28 @@ public class Jslt {
     @Override
     public int hashCode() {
       return name.hashCode();
+    }
+  }
+
+  /**
+   * Resolves imported modules from a map.
+   *
+   * @since 1.3.5
+   */
+  public static class MapResolver implements ResourceResolver {
+    private final Map<String, String> map;
+
+    /**
+     * Creates the resolver with a map.
+     *
+     * @param map the keys are relative paths and the values are JSLT strings.
+     */
+    public MapResolver(final Map<String, String> map) {
+      this.map = map;
+    }
+
+    public Reader resolve(final String jslt) {
+      return ofNullable(map.get(jslt)).map(StringReader::new).orElse(null);
     }
   }
 }

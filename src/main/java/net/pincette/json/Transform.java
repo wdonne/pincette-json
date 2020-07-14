@@ -16,7 +16,9 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import javax.json.JsonArray;
+import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
 
@@ -66,16 +68,17 @@ public class Transform {
     return addTransformer(path, createValue(value));
   }
 
-  private static String getKey(final String path, final String originalKey) {
+  private static String getKey(
+      final String path, final String originalKey, final String pathDelimter) {
     return Optional.ofNullable(originalKey)
         .map(path::lastIndexOf)
         .filter(index -> index != -1)
         .map(index -> originalKey)
-        .orElseGet(() -> JsonUtil.getKey(path));
+        .orElseGet(() -> JsonUtil.getKey(path, pathDelimter));
   }
 
-  private static String getPath(final String parent, final String key) {
-    return (parent != null && !"".equals(parent) ? (parent + ".") : "") + key;
+  private static String getPath(final String parent, final String key, final String pathDelimiter) {
+    return (parent != null && !"".equals(parent) ? (parent + pathDelimiter) : "") + key;
   }
 
   /**
@@ -121,7 +124,8 @@ public class Transform {
 
   /**
    * Returns a new value where recursively entries that <code>match</code> are transformed by <code>
-   * transformer</code>. If the latter is empty the entry is removed from the result.
+   * transformer</code>. If the latter is empty the entry is removed from the result. The path
+   * delimiter is thr dot.
    *
    * @param json the given JSON value.
    * @param transformer the applied transformer.
@@ -129,14 +133,46 @@ public class Transform {
    * @since 1.0
    */
   public static JsonValue transform(final JsonValue json, final Transformer transformer) {
-    return transform(json, null, transformer);
+    return transform(json, null, transformer, ".");
+  }
+
+  /**
+   * Returns a new value where recursively entries that <code>match</code> are transformed by <code>
+   * transformer</code>. If the latter is empty the entry is removed from the result.
+   *
+   * @param json the given JSON value.
+   * @param transformer the applied transformer.
+   * @param pathDelimiter separates the path segments in the <code>JsonEntry</code> objects.
+   * @return The new JSON value.
+   * @since 1.3.5
+   */
+  public static JsonValue transform(
+      final JsonValue json, final Transformer transformer, final String pathDelimiter) {
+    return transform(json, null, transformer, pathDelimiter);
   }
 
   private static JsonValue transform(
-      final JsonValue json, final String parent, final Transformer transformer) {
+      final JsonValue json,
+      final String parent,
+      final Transformer transformer,
+      final String pathDelimiter) {
     return json instanceof JsonStructure
-        ? transform((JsonStructure) json, parent, transformer)
+        ? transform((JsonStructure) json, parent, transformer, pathDelimiter)
         : json;
+  }
+
+  /**
+   * Returns a new structure where recursively entries that <code>match</code> are transformed by
+   * <code>transformer</code>. If the latter is empty the entry is removed from the result. The path
+   * delimiter is the dot.
+   *
+   * @param json the given JSON structure.
+   * @param transformer the applied transformer.
+   * @return The new JSON structure.
+   * @since 1.0
+   */
+  public static JsonStructure transform(final JsonStructure json, final Transformer transformer) {
+    return transform(json, null, transformer, ".");
   }
 
   /**
@@ -145,18 +181,37 @@ public class Transform {
    *
    * @param json the given JSON structure.
    * @param transformer the applied transformer.
+   * @param pathDelimiter separates the path segments in the <code>JsonEntry</code> objects.
    * @return The new JSON structure.
-   * @since 1.0
+   * @since 1.3.5
    */
-  public static JsonStructure transform(final JsonStructure json, final Transformer transformer) {
-    return transform(json, null, transformer);
+  public static JsonStructure transform(
+      final JsonStructure json, final Transformer transformer, final String pathDelimiter) {
+    return transform(json, null, transformer, pathDelimiter);
   }
 
   private static JsonStructure transform(
-      final JsonStructure json, final String parent, final Transformer transformer) {
+      final JsonStructure json,
+      final String parent,
+      final Transformer transformer,
+      final String pathDelimiter) {
     return json instanceof JsonArray
-        ? transform((JsonArray) json, parent, transformer)
-        : transform((JsonObject) json, parent, transformer);
+        ? transform((JsonArray) json, parent, transformer, pathDelimiter)
+        : transform((JsonObject) json, parent, transformer, pathDelimiter);
+  }
+
+  /**
+   * Returns a new array where entries of objects that <code>match</code> are transformed by <code>
+   * transformer</code>. If the latter is empty the entry is removed from the result. The path
+   * delimiter is the dot.
+   *
+   * @param array the given JSON array.
+   * @param transformer the applied transformer.
+   * @return The new JSON array.
+   * @since 1.0
+   */
+  public static JsonArray transform(final JsonArray array, final Transformer transformer) {
+    return transformBuilder(array, null, transformer, ".").build();
   }
 
   /**
@@ -165,22 +220,35 @@ public class Transform {
    *
    * @param array the given JSON array.
    * @param transformer the applied transformer.
+   * @param pathDelimiter separates the path segments in the <code>JsonEntry</code> objects.
    * @return The new JSON array.
-   * @since 1.0
+   * @since 1.3.5
    */
-  public static JsonArray transform(final JsonArray array, final Transformer transformer) {
-    return transform(array, null, transformer);
+  public static JsonArray transform(
+      final JsonArray array, final Transformer transformer, final String pathDelimiter) {
+    return transformBuilder(array, null, transformer, pathDelimiter).build();
   }
 
   private static JsonArray transform(
-      final JsonArray array, final String parent, final Transformer transformer) {
-    return array.stream()
-        .filter(Objects::nonNull)
-        .reduce(
-            createArrayBuilder(),
-            (b, v) -> b.add(transform(v, parent, transformer)),
-            (b1, b2) -> b1)
-        .build();
+      final JsonArray array,
+      final String parent,
+      final Transformer transformer,
+      final String pathDelimiter) {
+    return transformBuilder(array, parent, transformer, pathDelimiter).build();
+  }
+
+  /**
+   * Returns a new object where entries that <code>match</code> are transformed by <code>transformer
+   * </code>. If the latter is empty the entry is removed from the result. The path delimiter is the
+   * dot.
+   *
+   * @param obj the given JSON object.
+   * @param transformer the applied transformer.
+   * @return The new JSON object.
+   * @since 1.0
+   */
+  public static JsonObject transform(final JsonObject obj, final Transformer transformer) {
+    return transform(obj, null, transformer, ".");
   }
 
   /**
@@ -189,15 +257,101 @@ public class Transform {
    *
    * @param obj the given JSON object.
    * @param transformer the applied transformer.
+   * @param pathDelimiter separates the path segments in the <code>JsonEntry</code> objects.
    * @return The new JSON object.
-   * @since 1.0
+   * @since 1.3.5
    */
-  public static JsonObject transform(final JsonObject obj, final Transformer transformer) {
-    return transform(obj, null, transformer);
+  public static JsonObject transform(
+      final JsonObject obj, final Transformer transformer, final String pathDelimiter) {
+    return transform(obj, null, transformer, pathDelimiter);
   }
 
   private static JsonObject transform(
-      final JsonObject obj, final String parent, final Transformer transformer) {
+      final JsonObject obj,
+      final String parent,
+      final Transformer transformer,
+      final String pathDelimiter) {
+    return transformBuilder(obj, parent, transformer, pathDelimiter).build();
+  }
+
+  /**
+   * Returns a new array builder where entries of objects that <code>match</code> are transformed by
+   * <code>transformer</code>. If the latter is empty the entry is removed from the result. The path
+   * delimiter is thr dot.
+   *
+   * @param array the given JSON array.
+   * @param transformer the applied transformer.
+   * @return The new JSON array builder.
+   * @since 1.3.5
+   */
+  public static JsonArrayBuilder transformBuilder(
+      final JsonArray array, final Transformer transformer) {
+    return transformBuilder(array, null, transformer, ".");
+  }
+
+  /**
+   * Returns a new array builder where entries of objects that <code>match</code> are transformed by
+   * <code>transformer</code>. If the latter is empty the entry is removed from the result.
+   *
+   * @param array the given JSON array.
+   * @param transformer the applied transformer.
+   * @param pathDelimiter separates the path segments in the <code>JsonEntry</code> objects.
+   * @return The new JSON array builder.
+   * @since 1.3.5
+   */
+  public static JsonArrayBuilder transformBuilder(
+      final JsonArray array, final Transformer transformer, final String pathDelimiter) {
+    return transformBuilder(array, null, transformer, pathDelimiter);
+  }
+
+  private static JsonArrayBuilder transformBuilder(
+      final JsonArray array,
+      final String parent,
+      final Transformer transformer,
+      final String pathDelimiter) {
+    return array.stream()
+        .filter(Objects::nonNull)
+        .reduce(
+            createArrayBuilder(),
+            (b, v) -> b.add(transform(v, parent, transformer, pathDelimiter)),
+            (b1, b2) -> b1);
+  }
+
+  /**
+   * Returns a new object builder where entries that <code>match</code> are transformed by <code>
+   * transformer</code>. If the latter is empty the entry is removed from the result. The path
+   * delimiter is the dot.
+   *
+   * @param obj the given JSON object.
+   * @param transformer the applied transformer.
+   * @return The new JSON object builder.
+   * @since 1.3.5
+   */
+  public static JsonObjectBuilder transformBuilder(
+      final JsonObject obj, final Transformer transformer) {
+    return transformBuilder(obj, null, transformer, ".");
+  }
+
+  /**
+   * Returns a new object builder where entries that <code>match</code> are transformed by <code>
+   * transformer</code>. If the latter is empty the entry is removed from the result.
+   *
+   * @param obj the given JSON object.
+   * @param transformer the applied transformer.
+   * @param pathDelimiter separates the path segments in the <code>JsonEntry</code> objects.
+   * @return The new JSON object builder.
+   * @since 1.3.5
+   */
+  public static JsonObjectBuilder transformBuilder(
+      final JsonObject obj, final Transformer transformer, final String pathDelimiter) {
+    return transformBuilder(obj, null, transformer, pathDelimiter);
+  }
+
+  private static JsonObjectBuilder transformBuilder(
+      final JsonObject obj,
+      final String parent,
+      final Transformer transformer,
+      final String pathDelimiter) {
     return concat(parent == null ? of("") : empty(), obj.keySet().stream())
         .reduce(
             createObjectBuilder(),
@@ -206,23 +360,27 @@ public class Transform {
                     .run(
                         "".equals(k)
                             ? new JsonEntry("", obj)
-                            : new JsonEntry(getPath(parent, k), obj.get(k)))
+                            : new JsonEntry(getPath(parent, k, pathDelimiter), obj.get(k)))
                     .map(
                         entry ->
                             new JsonEntry(
-                                getPath(parent, getKey(entry.path, k)),
+                                getPath(
+                                    parent, getKey(entry.path, k, pathDelimiter), pathDelimiter),
                                 transform(
                                     entry.value,
-                                    getPath(parent, getKey(entry.path, k)),
-                                    transformer)))
+                                    getPath(
+                                        parent,
+                                        getKey(entry.path, k, pathDelimiter),
+                                        pathDelimiter),
+                                    transformer,
+                                    pathDelimiter)))
                     .map(
                         entry ->
                             "".equals(k)
                                 ? copy(entry.value.asJsonObject(), b)
-                                : b.add(getKey(entry.path, k), entry.value))
+                                : b.add(getKey(entry.path, k, pathDelimiter), entry.value))
                     .orElse(b),
-            (b1, b2) -> b1)
-        .build();
+            (b1, b2) -> b1);
   }
 
   public static class JsonEntry {

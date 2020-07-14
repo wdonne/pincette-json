@@ -5,6 +5,7 @@ import static java.lang.Double.POSITIVE_INFINITY;
 import static java.lang.String.join;
 import static java.time.Instant.ofEpochMilli;
 import static java.time.Instant.parse;
+import static java.util.regex.Pattern.quote;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -365,6 +366,10 @@ public class JsonUtil {
       return JsonValue.NULL;
     }
 
+    if (value instanceof JsonValue) {
+      return (JsonValue) value;
+    }
+
     if (value instanceof Boolean) {
       return ((boolean) value) ? JsonValue.TRUE : JsonValue.FALSE;
     }
@@ -482,7 +487,18 @@ public class JsonUtil {
    * @return The last segment.
    */
   public static String getKey(final String path) {
-    return getLastSegment(path, "\\.").orElse(path);
+    return getKey(path, ".");
+  }
+
+  /**
+   * Returns the last segment of a path.
+   *
+   * @param path the given path.
+   * @param pathDelimiter separates the path segments.
+   * @return The last segment.
+   */
+  public static String getKey(final String path, final String pathDelimiter) {
+    return getLastSegment(path, quote(pathDelimiter)).orElse(path);
   }
 
   public static Optional<Double> getNumber(final JsonStructure json, final String jsonPointer) {
