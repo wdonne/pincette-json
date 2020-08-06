@@ -1,20 +1,33 @@
 package net.pincette.json;
 
+import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Math.round;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
+import static java.util.UUID.randomUUID;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static javax.json.JsonValue.NULL;
 import static net.pincette.json.Jackson.from;
 import static net.pincette.json.Jackson.to;
+import static net.pincette.json.JsonUtil.add;
+import static net.pincette.json.JsonUtil.asString;
 import static net.pincette.json.JsonUtil.createArrayBuilder;
+import static net.pincette.json.JsonUtil.createValue;
+import static net.pincette.json.JsonUtil.getValue;
+import static net.pincette.json.JsonUtil.isObject;
+import static net.pincette.json.JsonUtil.isString;
 import static net.pincette.json.JsonUtil.string;
+import static net.pincette.json.JsonUtil.toDotSeparated;
+import static net.pincette.util.Collections.list;
 import static net.pincette.util.Collections.union;
+import static net.pincette.util.Pair.pair;
+import static net.pincette.util.Triple.triple;
 import static net.pincette.util.Util.tryToGetRethrow;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -34,7 +47,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -43,6 +55,7 @@ import java.util.function.UnaryOperator;
 import java.util.logging.Logger;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
+import javax.json.JsonString;
 import javax.json.JsonValue;
 import net.pincette.function.SideEffect;
 
@@ -54,9 +67,19 @@ import net.pincette.function.SideEffect;
  */
 public class Jslt {
   private static final String RESOURCE = "resource:";
-  private static Set<CustomFunction> customFunctions = new HashSet<>();
+  private static final Set<CustomFunction> customFunctions = new HashSet<>();
 
   private Jslt() {}
+
+  /**
+   * Creates a collection of all custom functions except <code>trace</code>.
+   *
+   * @return The collection of functions.
+   * @since 1.3.6
+   */
+  public static Collection<Function> customFunctions() {
+    return list(getPointer(), parseIsoInstant(), pointer(), setPointer(), uuid());
+  }
 
   /**
    * Wraps a lambda in a JSLT function.
@@ -86,6 +109,28 @@ public class Jslt {
   }
 
   /**
+   * This custom function is called "get-pointer". Its first two mandatory arguments are a JSON
+   * object and a JSON pointer. The optional third argument is a fallback value that is returned
+   * when the value doesn't exist. The default fallback value is <code>null</code>.
+   *
+   * @return The generated function.
+   * @since 1.3.6
+   */
+  public static Function getPointer() {
+    return function(
+        "get-pointer",
+        2,
+        3,
+        array ->
+            Optional.of(array)
+                .map(a -> pair(a.get(0), a.get(1)))
+                .filter(pair -> isObject(pair.first) && isString(pair.second))
+                .flatMap(
+                    pair -> getValue(pair.first.asJsonObject(), asString(pair.second).getString()))
+                .orElseGet(() -> array.size() == 3 ? array.get(2) : NULL));
+  }
+
+  /**
    * This custom function is called "parse-iso-instant". It uses <code>java.time.Instant.parse
    * </code> to parse its only argument and returns the epoch seconds value.
    *
@@ -108,6 +153,28 @@ public class Jslt {
   }
 
   /**
+   * This custom function is called "pointer". It composes a JSON pointer with all of its string
+   * arguments, of which there should be at least one.
+   *
+   * @return The generated function.
+   * @since 1.3.6
+   */
+  public static Function pointer() {
+    return function(
+        "pointer",
+        1,
+        MAX_VALUE,
+        array ->
+            createValue(
+                "/"
+                    + array.stream()
+                        .filter(JsonUtil::isString)
+                        .map(JsonUtil::asString)
+                        .map(JsonString::getString)
+                        .collect(joining("/"))));
+  }
+
+  /**
    * Adds custom functions globally. Later registrations override earlier ones based on the function
    * names. All created transformers will have access to all registered functions. Functions passed
    * to transformers will override registered ones.
@@ -119,6 +186,33 @@ public class Jslt {
     functions.forEach(f -> customFunctions.add(new CustomFunction(f)));
   }
 
+  /**
+   * This custom function is called "set-pointer". It requires three arguments: a JSON object, a
+   * JSON pointer and a value. The value will be set at the pointer location. The new object is
+   * returned.
+   *
+   * @return The generated function.
+   * @since 1.3.6
+   */
+  public static Function setPointer() {
+    return function(
+        "set-pointer",
+        3,
+        3,
+        array ->
+            Optional.of(array)
+                .map(a -> triple(a.get(0), a.get(1), a.get(2)))
+                .filter(triple -> isObject(triple.first) && isString(triple.second))
+                .map(
+                    triple ->
+                        (JsonValue)
+                            add(
+                                triple.first.asJsonObject(),
+                                toDotSeparated(asString(triple.second).getString()),
+                                triple.third))
+                .orElse(NULL));
+  }
+
   private static Set<CustomFunction> toCustom(final Collection<Function> functions) {
     return functions.stream().map(CustomFunction::new).collect(toSet());
   }
@@ -128,8 +222,8 @@ public class Jslt {
   }
 
   /**
-   * This function, which is called "trace" in JSLT, accepts one argument. It sends it to <code>
-   * logger</code> with level <code>INFO</code> and then returns it.
+   * This custom function, which is called "trace" in JSLT, accepts one argument. It sends it to
+   * <code>logger</code> with level <code>INFO</code> and then returns it.
    *
    * @param logger the given logger.
    * @return The generated function.
@@ -533,9 +627,24 @@ public class Jslt {
         : tryFile.get();
   }
 
+  /**
+   * This custom function is called "uuid". It generates a UUID.
+   *
+   * @return The generated function.
+   * @since 1.3.6
+   */
+  public static Function uuid() {
+    return function("uuid", 0, 0, array -> createValue(randomUUID().toString()));
+  }
+
   private static Map<String, JsonNode> variables(final Map<String, JsonValue> variables) {
     return ofNullable(variables)
-        .map(v -> v.entrySet().stream().collect(toMap(Entry::getKey, e -> from(e.getValue()))))
+        .map(
+            v ->
+                v.entrySet().stream()
+                    .map(e -> pair(e.getKey(), from(e.getValue())))
+                    .filter(pair -> pair.second != null)
+                    .collect(toMap(pair -> pair.first, pair -> pair.second)))
         .orElseGet(Collections::emptyMap);
   }
 
