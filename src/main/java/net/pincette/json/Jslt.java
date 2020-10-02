@@ -1,8 +1,11 @@
 package net.pincette.json;
 
 import static java.lang.Integer.MAX_VALUE;
+import static java.lang.Integer.max;
 import static java.lang.Math.round;
+import static java.lang.String.valueOf;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Arrays.fill;
 import static java.util.Arrays.stream;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
@@ -27,12 +30,15 @@ import static net.pincette.json.JsonUtil.toDotSeparated;
 import static net.pincette.util.Collections.list;
 import static net.pincette.util.Collections.union;
 import static net.pincette.util.Pair.pair;
+import static net.pincette.util.StreamUtil.rangeExclusive;
+import static net.pincette.util.StreamUtil.zip;
 import static net.pincette.util.Triple.triple;
 import static net.pincette.util.Util.tryToGetRethrow;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.schibsted.spt.data.jslt.Expression;
 import com.schibsted.spt.data.jslt.Function;
+import com.schibsted.spt.data.jslt.JsltException;
 import com.schibsted.spt.data.jslt.Parser;
 import com.schibsted.spt.data.jslt.ResourceResolver;
 import com.schibsted.spt.data.jslt.impl.ClasspathResourceResolver;
@@ -130,6 +136,12 @@ public class Jslt {
                 .orElseGet(() -> array.size() == 3 ? array.get(2) : NULL));
   }
 
+  private static String numberLines(final String s) {
+    return zip(stream(s.split("\\n")).sequential(), rangeExclusive(1, MAX_VALUE))
+        .map(pair -> rightAlign(valueOf(pair.second), 4) + " " + pair.first)
+        .collect(joining("\n"));
+  }
+
   /**
    * This custom function is called "parse-iso-instant". It uses <code>java.time.Instant.parse
    * </code> to parse its only argument and returns the epoch seconds value.
@@ -184,6 +196,14 @@ public class Jslt {
    */
   public static void registerCustomFunctions(final Collection<Function> functions) {
     functions.forEach(f -> customFunctions.add(new CustomFunction(f)));
+  }
+
+  private static String rightAlign(final String s, final int size) {
+    final char[] padding = new char[max(size - s.length(), 0)];
+
+    fill(padding, ' ');
+
+    return new String(padding) + s;
   }
 
   /**
@@ -549,7 +569,11 @@ public class Jslt {
       final Collection<Function> functions,
       final Map<String, JsonValue> variables,
       final ResourceResolver resolver) {
-    return transformer(new StringReader(jslt), functions, variables, resolver);
+    try {
+      return transformer(new StringReader(jslt), functions, variables, resolver);
+    } catch (JsltException e) {
+      throw new JsltException(numberLines(jslt) + "\n" + e.getMessage());
+    }
   }
 
   /**
