@@ -43,6 +43,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiPredicate;
@@ -247,7 +248,7 @@ public class JsonUtil {
   }
 
   private static Object convertNumber(final JsonNumber number) {
-    return number.isIntegral() ? (Object) number.longValue() : (Object) number.doubleValue();
+    return number.isIntegral() ? number.longValue() : number.doubleValue();
   }
 
   public static JsonObjectBuilder copy(final JsonObject obj, final JsonObjectBuilder builder) {
@@ -425,6 +426,10 @@ public class JsonUtil {
     return provider.createWriterFactory(config);
   }
 
+  public static Optional<Double> doubleValue(final JsonValue value) {
+    return Optional.of(value).filter(JsonUtil::isDouble).map(JsonUtil::asDouble);
+  }
+
   public static JsonArray emptyArray() {
     return createArrayBuilder().build();
   }
@@ -502,17 +507,11 @@ public class JsonUtil {
   }
 
   public static Optional<Double> getNumber(final JsonStructure json, final String jsonPointer) {
-    return getValue(json, jsonPointer)
-        .filter(JsonUtil::isNumber)
-        .map(JsonUtil::asNumber)
-        .map(JsonNumber::doubleValue);
+    return getValue(json, jsonPointer).flatMap(JsonUtil::doubleValue);
   }
 
   public static Stream<Double> getNumbers(final JsonObject json, final String array) {
-    return getValues(json, array)
-        .filter(JsonUtil::isNumber)
-        .map(JsonUtil::asNumber)
-        .map(JsonNumber::doubleValue);
+    return getValues(json, array).map(v -> doubleValue(v).orElse(null)).filter(Objects::nonNull);
   }
 
   public static Optional<JsonObject> getObject(final JsonStructure json, final String jsonPointer) {
@@ -538,17 +537,11 @@ public class JsonUtil {
   }
 
   public static Optional<String> getString(final JsonStructure json, final String jsonPointer) {
-    return getValue(json, jsonPointer)
-        .filter(JsonUtil::isString)
-        .map(JsonUtil::asString)
-        .map(JsonString::getString);
+    return getValue(json, jsonPointer).flatMap(JsonUtil::stringValue);
   }
 
   public static Stream<String> getStrings(final JsonObject json, final String array) {
-    return getValues(json, array)
-        .filter(JsonUtil::isString)
-        .map(JsonUtil::asString)
-        .map(JsonString::getString);
+    return getValues(json, array).map(v -> stringValue(v).orElse(null)).filter(Objects::nonNull);
   }
 
   public static Optional<JsonValue> getValue(final JsonStructure json, final String jsonPointer) {
@@ -559,6 +552,10 @@ public class JsonUtil {
     return Optional.ofNullable(json.getJsonArray(array))
         .map(JsonArray::stream)
         .orElseGet(Stream::empty);
+  }
+
+  public static Optional<Integer> intValue(final JsonValue value) {
+    return Optional.of(value).filter(JsonUtil::isInt).map(JsonUtil::asInt);
   }
 
   public static boolean isArray(final JsonValue value) {
@@ -615,12 +612,20 @@ public class JsonUtil {
     return value.getValueType() == JsonValue.ValueType.STRING;
   }
 
+  public static boolean isStructure(final JsonValue value) {
+    return isObject(value) || isArray(value);
+  }
+
   public static boolean isUri(final JsonValue value) {
     return isUri(asString(value).getString());
   }
 
   public static boolean isUri(final String s) {
     return s.startsWith("/") || net.pincette.util.Util.isUri(s);
+  }
+
+  public static Optional<Long> longValue(final JsonValue value) {
+    return Optional.of(value).filter(JsonUtil::isLong).map(JsonUtil::asLong);
   }
 
   /**
@@ -634,7 +639,7 @@ public class JsonUtil {
   }
 
   public static Stream<JsonObject> nestedObjects(final JsonObject json) {
-    return nestedObjectsAndSelf(json.entrySet().stream().map(Map.Entry::getValue));
+    return nestedObjectsAndSelf(json.values().stream());
   }
 
   public static Stream<JsonObject> nestedObjects(final JsonArray json) {
@@ -714,6 +719,13 @@ public class JsonUtil {
     tryToDoWith(() -> createWriterFactory(config).createWriter(writer), w -> w.write(json));
 
     return writer.toString();
+  }
+
+  public static Optional<String> stringValue(final JsonValue value) {
+    return Optional.of(value)
+        .filter(JsonUtil::isString)
+        .map(JsonUtil::asString)
+        .map(JsonString::getString);
   }
 
   /**
