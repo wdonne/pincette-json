@@ -391,7 +391,7 @@ public class JsonUtil {
       return provider.createValue((BigDecimal) value);
     }
 
-    if (value instanceof Double || value instanceof Float) {
+    if (isValidDouble(value) || isValidFloat(value)) {
       return provider.createValue(((Number) value).doubleValue());
     }
 
@@ -622,6 +622,14 @@ public class JsonUtil {
 
   public static boolean isUri(final String s) {
     return s.startsWith("/") || net.pincette.util.Util.isUri(s);
+  }
+
+  private static boolean isValidDouble(final Object value) {
+    return value instanceof Double && !value.equals(Double.NaN);
+  }
+
+  private static boolean isValidFloat(final Object value) {
+    return value instanceof Float && !value.equals(Float.NaN);
   }
 
   public static Optional<Long> longValue(final JsonValue value) {
