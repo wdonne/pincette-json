@@ -10,6 +10,7 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Stream.concat;
+import static java.util.stream.Stream.empty;
 import static java.util.stream.Stream.of;
 import static javax.json.JsonValue.ValueType.FALSE;
 import static javax.json.JsonValue.ValueType.TRUE;
@@ -50,6 +51,7 @@ import java.util.function.BiPredicate;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import javax.json.JsonArray;
@@ -173,6 +175,30 @@ public class JsonUtil {
             (b, p) -> addJsonField(b, p.first, p.second),
             (b1, b2) -> b1)
         .build();
+  }
+
+  /**
+   * Returns a new array where <code>value</code> is appended.
+   *
+   * @param array the given JSON array.
+   * @param value the new value.
+   * @return The new array.
+   * @since 1.3.10
+   */
+  public static JsonArray add(final JsonArray array, final JsonValue value) {
+    return set(array, array.size(), value);
+  }
+
+  /**
+   * Returns a new array where <code>value</code> is appended.
+   *
+   * @param array the given JSON array.
+   * @param value the new value.
+   * @return The new array.
+   * @since 1.3.10
+   */
+  public static JsonArray add(final JsonArray array, final Object value) {
+    return set(array, array.size(), createValue(value));
   }
 
   /**
@@ -677,6 +703,24 @@ public class JsonUtil {
   }
 
   /**
+   * Returns a new array where the value at <code>position</code> is removed. If <code>position
+   * </code> is negative or larger than or equal the size of the array, then the array is returned.
+   *
+   * @param array the given JSON array.
+   * @param position the position in the array.
+   * @return The new array.
+   * @since 1.3.10
+   */
+  public static JsonArray remove(final JsonArray array, final int position) {
+    return position < 0 || position >= array.size()
+        ? array
+        : from(
+            concat(
+                array.subList(0, position).stream(),
+                array.subList(position + 1, array.size()).stream()));
+  }
+
+  /**
    * Removes fields with a name that starts with an underscore.
    *
    * @param obj the given JSON object.
@@ -710,6 +754,46 @@ public class JsonUtil {
    */
   public static JsonObject set(final JsonObject obj, final String path, final Object value) {
     return set(obj, path, createValue(value));
+  }
+
+  /**
+   * Returns a new array where the value at <code>position</code> is set to <code>value</code>. If
+   * <code>position</code> is negative or larger than the size of the array, then the array is
+   * returned. If <code>position</code> is equal to the size of the array, then <code>value</code>
+   * is appended.
+   *
+   * @param array the given JSON array.
+   * @param position the position in the array.
+   * @param value the new value.
+   * @return The new array.
+   * @since 1.3.10
+   */
+  public static JsonArray set(final JsonArray array, final int position, final JsonValue value) {
+    final Supplier<Stream<JsonValue>> secondPart =
+        () ->
+            position < array.size() ? array.subList(position + 1, array.size()).stream() : empty();
+
+    return position < 0 || position > array.size()
+        ? array
+        : from(
+            concat(
+                concat(array.subList(0, position).stream(), Stream.of(value)), secondPart.get()));
+  }
+
+  /**
+   * Returns a new array where the value at <code>position</code> is set to <code>value</code>. If
+   * <code>position</code> is negative or larger than the size of the array, then the array is
+   * returned. If <code>position</code> is equal to the size of the array, then <code>value</code>
+   * is appended.
+   *
+   * @param array the given JSON array.
+   * @param position the position in the array.
+   * @param value the new value.
+   * @return The new array.
+   * @since 1.3.10
+   */
+  public static JsonArray set(final JsonArray array, final int position, final Object value) {
+    return set(array, position, createValue(value));
   }
 
   public static String string(final JsonValue json) {

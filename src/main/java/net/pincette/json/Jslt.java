@@ -238,7 +238,7 @@ public class Jslt {
   }
 
   private static Collection<Function> toFunction(final Set<CustomFunction> functions) {
-    return functions.stream().map(f -> (Function) f).collect(toList());
+    return functions.stream().map(Function.class::cast).collect(toList());
   }
 
   /**
