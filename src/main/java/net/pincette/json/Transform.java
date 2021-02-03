@@ -1,7 +1,5 @@
 package net.pincette.json;
 
-import static java.util.stream.Stream.concat;
-import static java.util.stream.Stream.empty;
 import static java.util.stream.Stream.of;
 import static net.pincette.json.JsonUtil.copy;
 import static net.pincette.json.JsonUtil.createArrayBuilder;
@@ -9,6 +7,8 @@ import static net.pincette.json.JsonUtil.createObjectBuilder;
 import static net.pincette.json.JsonUtil.createValue;
 import static net.pincette.json.JsonUtil.getParentPath;
 import static net.pincette.json.JsonUtil.isObject;
+import static net.pincette.json.JsonUtil.isStructure;
+import static net.pincette.util.Pair.pair;
 import static net.pincette.util.Util.getLastSegment;
 
 import java.util.Objects;
@@ -352,7 +352,7 @@ public class Transform {
       final String parent,
       final Transformer transformer,
       final String pathDelimiter) {
-    return concat(parent == null ? of("") : empty(), obj.keySet().stream())
+    return (parent == null ? of("") : obj.keySet().stream())
         .reduce(
             createObjectBuilder(),
             (b, k) ->
@@ -362,18 +362,7 @@ public class Transform {
                             ? new JsonEntry("", obj)
                             : new JsonEntry(getPath(parent, k, pathDelimiter), obj.get(k)))
                     .map(
-                        entry ->
-                            new JsonEntry(
-                                getPath(
-                                    parent, getKey(entry.path, k, pathDelimiter), pathDelimiter),
-                                transform(
-                                    entry.value,
-                                    getPath(
-                                        parent,
-                                        getKey(entry.path, k, pathDelimiter),
-                                        pathDelimiter),
-                                    transformer,
-                                    pathDelimiter)))
+                        entry -> transformIfStructure(entry, k, parent, transformer, pathDelimiter))
                     .map(
                         entry ->
                             "".equals(k)
@@ -381,6 +370,23 @@ public class Transform {
                                 : b.add(getKey(entry.path, k, pathDelimiter), entry.value))
                     .orElse(b),
             (b1, b2) -> b1);
+  }
+
+  private static JsonEntry transformIfStructure(
+      final JsonEntry entry,
+      final String key,
+      final String parentPath,
+      final Transformer transformer,
+      final String pathDelimiter) {
+    return Optional.of(entry)
+        .filter(e -> isStructure(e.value))
+        .map(e -> pair(e, getPath(parentPath, getKey(e.path, key, pathDelimiter), pathDelimiter)))
+        .map(
+            pair ->
+                new JsonEntry(
+                    pair.second,
+                    transform(pair.first.value, pair.second, transformer, pathDelimiter)))
+        .orElse(entry);
   }
 
   public static class JsonEntry {
