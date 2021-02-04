@@ -356,11 +356,10 @@ public class Transform {
         .reduce(
             createObjectBuilder(),
             (b, k) ->
-                transformer
-                    .run(
-                        "".equals(k)
-                            ? new JsonEntry("", obj)
-                            : new JsonEntry(getPath(parent, k, pathDelimiter), obj.get(k)))
+                ("".equals(k)
+                        ? Optional.of(new JsonEntry("", obj))
+                        : transformer.run(
+                            new JsonEntry(getPath(parent, k, pathDelimiter), obj.get(k))))
                     .map(
                         entry -> transformIfStructure(entry, k, parent, transformer, pathDelimiter))
                     .map(
