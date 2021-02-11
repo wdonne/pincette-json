@@ -16,7 +16,6 @@ import static javax.json.JsonValue.ValueType.FALSE;
 import static javax.json.JsonValue.ValueType.TRUE;
 import static javax.json.spi.JsonProvider.provider;
 import static javax.xml.stream.XMLOutputFactory.newInstance;
-import static net.pincette.json.Transform.addTransformer;
 import static net.pincette.json.Transform.setTransformer;
 import static net.pincette.json.Transform.transform;
 import static net.pincette.util.Pair.pair;
@@ -117,7 +116,7 @@ public class JsonUtil {
    * @return The new object.
    */
   public static JsonObject add(final JsonObject obj, final String path, final JsonValue value) {
-    return transform(obj, addTransformer(path, value));
+    return createPointer(toJsonPointer(path)).add(obj, value).asJsonObject();
   }
 
   /**

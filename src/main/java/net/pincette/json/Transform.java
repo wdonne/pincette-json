@@ -5,11 +5,8 @@ import static net.pincette.json.JsonUtil.copy;
 import static net.pincette.json.JsonUtil.createArrayBuilder;
 import static net.pincette.json.JsonUtil.createObjectBuilder;
 import static net.pincette.json.JsonUtil.createValue;
-import static net.pincette.json.JsonUtil.getParentPath;
-import static net.pincette.json.JsonUtil.isObject;
 import static net.pincette.json.JsonUtil.isStructure;
 import static net.pincette.util.Pair.pair;
-import static net.pincette.util.Util.getLastSegment;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -31,42 +28,6 @@ import javax.json.JsonValue;
  */
 public class Transform {
   private Transform() {}
-
-  /**
-   * Returns a transformer that adds or replaces the value of the field designated by the
-   * dot-separated <code>path</code> with <code>value</code>.
-   *
-   * @param path the dot-separated path.
-   * @param value the new value.
-   * @return The transformer.
-   * @since 1.0
-   */
-  public static Transformer addTransformer(final String path, final JsonValue value) {
-    final String parent = getParentPath(path);
-
-    return new Transformer(
-        e -> e.path.equals(parent) && isObject(e.value),
-        e ->
-            getLastSegment(path, ".")
-                .map(
-                    s ->
-                        new JsonEntry(
-                            e.path,
-                            createObjectBuilder(e.value.asJsonObject()).add(s, value).build())));
-  }
-
-  /**
-   * Returns a transformer that adds or replaces the value of the field designated by the
-   * dot-separated <code>path</code> with <code>value</code>.
-   *
-   * @param path the dot-separated path.
-   * @param value the new value.
-   * @return The transformer.
-   * @since 1.0
-   */
-  public static Transformer addTransformer(final String path, final Object value) {
-    return addTransformer(path, createValue(value));
-  }
 
   private static String getKey(
       final String path, final String originalKey, final String pathDelimter) {
