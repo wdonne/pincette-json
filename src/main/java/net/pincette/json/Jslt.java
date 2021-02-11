@@ -4,6 +4,8 @@ import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Integer.max;
 import static java.lang.Math.round;
 import static java.lang.String.valueOf;
+import static java.net.URLDecoder.decode;
+import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.fill;
 import static java.util.Arrays.stream;
@@ -84,7 +86,8 @@ public class Jslt {
    * @since 1.3.6
    */
   public static Collection<Function> customFunctions() {
-    return list(getPointer(), parseIsoInstant(), pointer(), setPointer(), uuid());
+    return list(
+        getPointer(), parseIsoInstant(), pointer(), setPointer(), uriDecode(), uriEncode(), uuid());
   }
 
   /**
@@ -649,6 +652,40 @@ public class Jslt {
     return jslt.startsWith(RESOURCE)
         ? transformer(jslt.substring(RESOURCE.length()), functions, variables, resolver)
         : tryFile.get();
+  }
+
+  /**
+   * This custom function is called "uri-decode". It performs URI-decode on its argument.
+   *
+   * @return The generated function.
+   * @since 1.3.13
+   */
+  public static Function uriDecode() {
+    return function(
+        "uri-decode",
+        1,
+        1,
+        array ->
+            createValue(
+                tryToGetRethrow(() -> decode(asString(array.get(0)).getString(), "UTF-8"))
+                    .orElse(null)));
+  }
+
+  /**
+   * This custom function is called "uri-encode". It performs URI-encoding on its argument.
+   *
+   * @return The generated function.
+   * @since 1.3.13
+   */
+  public static Function uriEncode() {
+    return function(
+        "uri-encode",
+        1,
+        1,
+        array ->
+            createValue(
+                tryToGetRethrow(() -> encode(asString(array.get(0)).getString(), "UTF-8"))
+                    .orElse(null)));
   }
 
   /**
