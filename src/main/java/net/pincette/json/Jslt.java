@@ -2,39 +2,24 @@ package net.pincette.json;
 
 import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Integer.max;
-import static java.lang.Math.round;
 import static java.lang.String.valueOf;
-import static java.net.URLDecoder.decode;
-import static java.net.URLEncoder.encode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.fill;
 import static java.util.Arrays.stream;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
-import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static javax.json.JsonValue.NULL;
 import static net.pincette.json.Jackson.from;
 import static net.pincette.json.Jackson.to;
-import static net.pincette.json.JsonUtil.add;
-import static net.pincette.json.JsonUtil.asString;
-import static net.pincette.json.JsonUtil.createArrayBuilder;
-import static net.pincette.json.JsonUtil.createValue;
-import static net.pincette.json.JsonUtil.getValue;
-import static net.pincette.json.JsonUtil.isObject;
-import static net.pincette.json.JsonUtil.isString;
-import static net.pincette.json.JsonUtil.string;
-import static net.pincette.json.JsonUtil.toDotSeparated;
 import static net.pincette.util.Collections.list;
 import static net.pincette.util.Collections.union;
 import static net.pincette.util.Pair.pair;
 import static net.pincette.util.StreamUtil.rangeExclusive;
 import static net.pincette.util.StreamUtil.zip;
-import static net.pincette.util.Triple.triple;
 import static net.pincette.util.Util.tryToGetRethrow;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -50,22 +35,18 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
-import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.logging.Logger;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
-import javax.json.JsonString;
 import javax.json.JsonValue;
-import net.pincette.function.SideEffect;
+import net.pincette.json.JsltCustom.CustomFunction;
 
 /**
  * JSLT utilities.
@@ -79,12 +60,23 @@ public class Jslt {
 
   private Jslt() {}
 
+  private static java.util.function.Function<JsonValue, JsonObject> asObject() {
+    return json ->
+        ofNullable(json).filter(JsonUtil::isObject).map(JsonValue::asJsonObject).orElse(null);
+  }
+
+  private static java.util.function.Function<JsonObject, JsonValue> asValue() {
+    return json -> json;
+  }
+
   /**
    * Creates a collection of all custom functions except <code>trace</code>.
    *
    * @return The collection of functions.
    * @since 1.3.6
+   * @deprecated Use the JsltCustom version.
    */
+  @Deprecated(since = "1.4")
   public static Collection<Function> customFunctions() {
     return list(
         getPointer(), parseIsoInstant(), pointer(), setPointer(), uriDecode(), uriEncode(), uuid());
@@ -99,22 +91,15 @@ public class Jslt {
    * @param function the lambda.
    * @return The JSLT function.
    * @since 1.3.1
+   * @deprecated Use the JsltCustom version.
    */
+  @Deprecated(since = "1.4")
   public static Function function(
       final String name,
       final int minArguments,
       final int maxArguments,
       final java.util.function.Function<JsonArray, JsonValue> function) {
-    return new CustomFunction(
-        name,
-        minArguments,
-        maxArguments,
-        (input, arguments) ->
-            from(
-                function.apply(
-                    stream(arguments)
-                        .reduce(createArrayBuilder(), (b, v) -> b.add(to(v)), (b1, b2) -> b1)
-                        .build())));
+    return JsltCustom.function(name, minArguments, maxArguments, function);
   }
 
   /**
@@ -124,19 +109,11 @@ public class Jslt {
    *
    * @return The generated function.
    * @since 1.3.6
+   * @deprecated Use the JsltCustom version.
    */
+  @Deprecated(since = "1.4")
   public static Function getPointer() {
-    return function(
-        "get-pointer",
-        2,
-        3,
-        array ->
-            Optional.of(array)
-                .map(a -> pair(a.get(0), a.get(1)))
-                .filter(pair -> isObject(pair.first) && isString(pair.second))
-                .flatMap(
-                    pair -> getValue(pair.first.asJsonObject(), asString(pair.second).getString()))
-                .orElseGet(() -> array.size() == 3 ? array.get(2) : NULL));
+    return JsltCustom.getPointer();
   }
 
   private static String numberLines(final String s) {
@@ -151,20 +128,11 @@ public class Jslt {
    *
    * @return The generated function.
    * @since 1.3.2
+   * @deprecated Use the JsltCustom version.
    */
+  @Deprecated(since = "1.4")
   public static Function parseIsoInstant() {
-    return function(
-        "parse-iso-instant",
-        1,
-        1,
-        array ->
-            Optional.of(array.get(0))
-                .filter(JsonUtil::isInstant)
-                .map(JsonUtil::asInstant)
-                .map(Instant::toEpochMilli)
-                .map(v -> round(v / 1000.0))
-                .map(JsonUtil::createValue)
-                .orElse(NULL));
+    return JsltCustom.parseIsoInstant();
   }
 
   /**
@@ -173,20 +141,23 @@ public class Jslt {
    *
    * @return The generated function.
    * @since 1.3.6
+   * @deprecated Use the JsltCustom version.
    */
+  @Deprecated(since = "1.4")
   public static Function pointer() {
-    return function(
-        "pointer",
-        1,
-        MAX_VALUE,
-        array ->
-            createValue(
-                "/"
-                    + array.stream()
-                        .filter(JsonUtil::isString)
-                        .map(JsonUtil::asString)
-                        .map(JsonString::getString)
-                        .collect(joining("/"))));
+    return JsltCustom.pointer();
+  }
+
+  public static Reader reader(final File file) {
+    return tryToGetRethrow(() -> reader(new FileInputStream(file))).orElse(null);
+  }
+
+  public static Reader reader(final InputStream in) {
+    return new InputStreamReader(in, UTF_8);
+  }
+
+  public static Reader readerResource(final String resource) {
+    return reader(Jslt.class.getResourceAsStream(resource));
   }
 
   /**
@@ -196,9 +167,11 @@ public class Jslt {
    *
    * @param functions the given custom functions.
    * @since 1.3.1
+   * @deprecated Use the variant with the context.
    */
+  @Deprecated(since = "1.4")
   public static void registerCustomFunctions(final Collection<Function> functions) {
-    functions.forEach(f -> customFunctions.add(new CustomFunction(f)));
+    functions.forEach(f -> customFunctions.add(new JsltCustom.CustomFunction(f)));
   }
 
   private static String rightAlign(final String s, final int size) {
@@ -216,24 +189,11 @@ public class Jslt {
    *
    * @return The generated function.
    * @since 1.3.6
+   * @deprecated Use the JsltCustom version.
    */
+  @Deprecated(since = "1.4")
   public static Function setPointer() {
-    return function(
-        "set-pointer",
-        3,
-        3,
-        array ->
-            Optional.of(array)
-                .map(a -> triple(a.get(0), a.get(1), a.get(2)))
-                .filter(triple -> isObject(triple.first) && isString(triple.second))
-                .map(
-                    triple ->
-                        (JsonValue)
-                            add(
-                                triple.first.asJsonObject(),
-                                toDotSeparated(asString(triple.second).getString()),
-                                triple.third))
-                .orElse(NULL));
+    return JsltCustom.setPointer();
   }
 
   private static Set<CustomFunction> toCustom(final Collection<Function> functions) {
@@ -251,15 +211,11 @@ public class Jslt {
    * @param logger the given logger.
    * @return The generated function.
    * @since 1.3.1
+   * @deprecated Use the JsltCustom version.
    */
+  @Deprecated(since = "1.4")
   public static Function trace(final Logger logger) {
-    return function(
-        "trace",
-        1,
-        1,
-        array ->
-            SideEffect.<JsonValue>run(() -> logger.info(string(array.get(0))))
-                .andThenGet(() -> array.get(0)));
+    return JsltCustom.trace(logger);
   }
 
   /**
@@ -268,9 +224,11 @@ public class Jslt {
    * @param resource the resource in the classpath that contains the JSLT file.
    * @return The transformer function.
    * @since 1.1
+   * @deprecated Use the variant with the context.
    */
+  @Deprecated(since = "1.4")
   public static UnaryOperator<JsonObject> transformer(final String resource) {
-    return transformer(resource, null);
+    return transformerObject(new Context(readerResource(resource)));
   }
 
   /**
@@ -280,10 +238,12 @@ public class Jslt {
    * @param functions a collection of custom functions. It may be <code>null</code>.
    * @return The transformer function.
    * @since 1.1
+   * @deprecated Use the variant with the context.
    */
+  @Deprecated(since = "1.4")
   public static UnaryOperator<JsonObject> transformer(
       final String resource, final Collection<Function> functions) {
-    return transformer(resource, functions, emptyMap());
+    return transformerObject(new Context(readerResource(resource)).withFunctions(functions));
   }
 
   /**
@@ -294,12 +254,15 @@ public class Jslt {
    * @param variables pre-set variables. It may be <code>null</code>.
    * @return The transformer function.
    * @since 1.2.3
+   * @deprecated Use the variant with the context.
    */
+  @Deprecated(since = "1.4")
   public static UnaryOperator<JsonObject> transformer(
       final String resource,
       final Collection<Function> functions,
       final Map<String, JsonValue> variables) {
-    return transformer(resource, functions, variables, null);
+    return transformerObject(
+        new Context(readerResource(resource)).withFunctions(functions).withVariables(variables));
   }
 
   /**
@@ -312,13 +275,19 @@ public class Jslt {
    *     classpath resolver is used.
    * @return The transformer function.
    * @since 1.3.5
+   * @deprecated Use the variant with the context.
    */
+  @Deprecated(since = "1.4")
   public static UnaryOperator<JsonObject> transformer(
       final String resource,
       final Collection<Function> functions,
       final Map<String, JsonValue> variables,
       final ResourceResolver resolver) {
-    return transformer(Jslt.class.getResourceAsStream(resource), functions, variables, resolver);
+    return transformerObject(
+        new Context(readerResource(resource))
+            .withFunctions(functions)
+            .withVariables(variables)
+            .withResolver(resolver));
   }
 
   /**
@@ -327,9 +296,11 @@ public class Jslt {
    * @param file the JSLT file.
    * @return The transformer function.
    * @since 1.2.2
+   * @deprecated Use the variant with the context.
    */
+  @Deprecated(since = "1.4")
   public static UnaryOperator<JsonObject> transformer(final File file) {
-    return transformer(file, null);
+    return transformerObject(new Context(reader(file)));
   }
 
   /**
@@ -339,10 +310,12 @@ public class Jslt {
    * @param functions a collection of custom functions. It may be <code>null</code>.
    * @return The transformer function.
    * @since 1.2.2
+   * @deprecated Use the variant with the context.
    */
+  @Deprecated(since = "1.4")
   public static UnaryOperator<JsonObject> transformer(
       final File file, final Collection<Function> functions) {
-    return transformer(file, functions, emptyMap());
+    return transformerObject(new Context(reader(file)).withFunctions(functions));
   }
 
   /**
@@ -353,12 +326,15 @@ public class Jslt {
    * @param variables pre-set variables. It may be <code>null</code>.
    * @return The transformer function.
    * @since 1.2.3
+   * @deprecated Use the variant with the context.
    */
+  @Deprecated(since = "1.4")
   public static UnaryOperator<JsonObject> transformer(
       final File file,
       final Collection<Function> functions,
       final Map<String, JsonValue> variables) {
-    return transformer(file, functions, variables, null);
+    return transformerObject(
+        new Context(reader(file)).withFunctions(functions).withVariables(variables));
   }
 
   /**
@@ -371,17 +347,19 @@ public class Jslt {
    *     classpath resolver is used.
    * @return The transformer function.
    * @since 1.3.5
+   * @deprecated Use the variant with the context.
    */
+  @Deprecated(since = "1.4")
   public static UnaryOperator<JsonObject> transformer(
       final File file,
       final Collection<Function> functions,
       final Map<String, JsonValue> variables,
       final ResourceResolver resolver) {
-    return transformer(
-        tryToGetRethrow(() -> new FileInputStream(file)).orElse(null),
-        functions,
-        variables,
-        resolver);
+    return transformerObject(
+        new Context(reader(file))
+            .withFunctions(functions)
+            .withVariables(variables)
+            .withResolver(resolver));
   }
 
   /**
@@ -390,9 +368,11 @@ public class Jslt {
    * @param in the JSLT input stream.
    * @return The transformer function.
    * @since 1.2.2
+   * @deprecated Use the variant with the context.
    */
+  @Deprecated(since = "1.4")
   public static UnaryOperator<JsonObject> transformer(final InputStream in) {
-    return transformer(in, null);
+    return transformerObject(new Context(reader(in)));
   }
 
   /**
@@ -402,10 +382,12 @@ public class Jslt {
    * @param functions a collection of custom functions. It may be <code>null</code>.
    * @return The transformer function.
    * @since 1.2.2
+   * @deprecated Use the variant with the context.
    */
+  @Deprecated(since = "1.4")
   public static UnaryOperator<JsonObject> transformer(
       final InputStream in, final Collection<Function> functions) {
-    return transformer(in, functions, emptyMap());
+    return transformerObject(new Context(reader(in)).withFunctions(functions));
   }
 
   /**
@@ -416,12 +398,15 @@ public class Jslt {
    * @param variables pre-set variables. It may be <code>null</code>.
    * @return The transformer function.
    * @since 1.2.3
+   * @deprecated Use the variant with the context.
    */
+  @Deprecated(since = "1.4")
   public static UnaryOperator<JsonObject> transformer(
       final InputStream in,
       final Collection<Function> functions,
       final Map<String, JsonValue> variables) {
-    return transformer(in, functions, variables, null);
+    return transformerObject(
+        new Context(reader(in)).withFunctions(functions).withVariables(variables));
   }
 
   /**
@@ -434,13 +419,19 @@ public class Jslt {
    *     classpath resolver is used.
    * @return The transformer function.
    * @since 1.3.5
+   * @deprecated Use the variant with the context.
    */
+  @Deprecated(since = "1.4")
   public static UnaryOperator<JsonObject> transformer(
       final InputStream in,
       final Collection<Function> functions,
       final Map<String, JsonValue> variables,
       final ResourceResolver resolver) {
-    return transformer(new InputStreamReader(in, UTF_8), functions, variables, resolver);
+    return transformerObject(
+        new Context(reader(in))
+            .withFunctions(functions)
+            .withVariables(variables)
+            .withResolver(resolver));
   }
 
   /**
@@ -449,9 +440,11 @@ public class Jslt {
    * @param reader the JSLT reader.
    * @return The transformer function.
    * @since 1.2.2
+   * @deprecated Use the variant with the context.
    */
+  @Deprecated(since = "1.4")
   public static UnaryOperator<JsonObject> transformer(final Reader reader) {
-    return transformer(reader, null);
+    return transformerObject(new Context(reader));
   }
 
   /**
@@ -461,10 +454,12 @@ public class Jslt {
    * @param functions a collection of custom functions. It may be <code>null</code>.
    * @return The transformer function.
    * @since 1.2.2
+   * @deprecated Use the variant with the context.
    */
+  @Deprecated(since = "1.4")
   public static UnaryOperator<JsonObject> transformer(
       final Reader reader, final Collection<Function> functions) {
-    return transformer(reader, functions, emptyMap());
+    return transformerObject(new Context(reader).withFunctions(functions));
   }
 
   /**
@@ -475,12 +470,14 @@ public class Jslt {
    * @param variables pre-set variables. It may be <code>null</code>.
    * @return The transformer function.
    * @since 1.2.3
+   * @deprecated Use the variant with the context.
    */
+  @Deprecated(since = "1.4")
   public static UnaryOperator<JsonObject> transformer(
       final Reader reader,
       final Collection<Function> functions,
       final Map<String, JsonValue> variables) {
-    return transformer(reader, functions, variables, null);
+    return transformerObject(new Context(reader).withFunctions(functions).withVariables(variables));
   }
 
   /**
@@ -493,27 +490,34 @@ public class Jslt {
    *     classpath resolver is used.
    * @return The transformer function.
    * @since 1.3.5
+   * @deprecated Use the variant with the context.
    */
+  @Deprecated(since = "1.4")
   public static UnaryOperator<JsonObject> transformer(
       final Reader reader,
       final Collection<Function> functions,
       final Map<String, JsonValue> variables,
       final ResourceResolver resolver) {
-    final Parser parser = new Parser(reader);
-    final Expression jslt =
-        parser
-            .withFunctions(
-                toFunction(
-                    union(customFunctions, functions != null ? toCustom(functions) : emptySet())))
-            .withResourceResolver(resolver != null ? resolver : new ClasspathResourceResolver())
-            .compile();
-    final Map<String, JsonNode> vars = variables(variables);
+    return transformerObject(
+        new Context(reader)
+            .withFunctions(functions)
+            .withVariables(variables)
+            .withResolver(resolver));
+  }
 
-    return json ->
-        ofNullable(to(jslt.apply(vars, from(json))))
-            .filter(JsonUtil::isObject)
-            .map(JsonValue::asJsonObject)
-            .orElse(null);
+  /**
+   * Returns a function that transforms JSON using a JSLT script.
+   *
+   * @param context The context of the call.
+   * @return The transformer function.
+   * @since 1.4
+   */
+  @SuppressWarnings("java:S4276") // Not compatible.
+  public static UnaryOperator<JsonObject> transformerObject(final Context context) {
+    final java.util.function.Function<JsonObject, JsonObject> transformer =
+        asObject().compose(transformerValue(context)).compose(asValue());
+
+    return transformer::apply;
   }
 
   /**
@@ -522,7 +526,9 @@ public class Jslt {
    * @param jslt the JSLT script.
    * @return The transformer function.
    * @since 1.2.2
+   * @deprecated Use the variant with the context.
    */
+  @Deprecated(since = "1.4")
   public static UnaryOperator<JsonObject> transformerString(final String jslt) {
     return transformerString(jslt, null);
   }
@@ -534,7 +540,9 @@ public class Jslt {
    * @param functions a collection of custom functions. It may be <code>null</code>.
    * @return The transformer function.
    * @since 1.2.2
+   * @deprecated Use the variant with the context.
    */
+  @Deprecated(since = "1.4")
   public static UnaryOperator<JsonObject> transformerString(
       final String jslt, final Collection<Function> functions) {
     return transformerString(jslt, functions, emptyMap());
@@ -548,7 +556,9 @@ public class Jslt {
    * @param variables pre-set variables. It may be <code>null</code>.
    * @return The transformer function.
    * @since 1.3.1
+   * @deprecated Use the variant with the context.
    */
+  @Deprecated(since = "1.4")
   public static UnaryOperator<JsonObject> transformerString(
       final String jslt,
       final Collection<Function> functions,
@@ -566,7 +576,9 @@ public class Jslt {
    *     classpath resolver is used.
    * @return The transformer function.
    * @since 1.3.5
+   * @deprecated Use the variant with the context.
    */
+  @Deprecated(since = "1.4")
   public static UnaryOperator<JsonObject> transformerString(
       final String jslt,
       final Collection<Function> functions,
@@ -582,12 +594,56 @@ public class Jslt {
   /**
    * Returns a function that transforms JSON using a JSLT script.
    *
+   * @param context The context of the call.
+   * @return The transformer function.
+   * @since 1.4
+   */
+  public static UnaryOperator<JsonValue> transformerValue(final Context context) {
+    final Parser parser = new Parser(context.reader);
+    final Expression jslt =
+        parser
+            .withFunctions(
+                toFunction(
+                    union(
+                        customFunctions,
+                        context.functions != null ? toCustom(context.functions) : emptySet())))
+            .withResourceResolver(
+                context.resolver != null ? context.resolver : new ClasspathResourceResolver())
+            .compile();
+    final Map<String, JsonNode> vars = variables(context.variables);
+
+    return json -> ofNullable(to(jslt.apply(vars, from(json)))).orElse(null);
+  }
+
+  /**
+   * Returns a reader for a JSLT script.
+   *
+   * @param jslt the JSLT script. If it starts with "resource:" the script is loaded as a class path
+   *     resource. If it denotes an existing file it will be loaded from that file. Otherwise it is
+   *     interpreted as a JSLT script.
+   * @return The transformer function.
+   * @since 1.4
+   */
+  public static Reader tryReader(final String jslt) {
+    final Supplier<Reader> tryFile =
+        () -> new File(jslt).exists() ? reader(new File(jslt)) : new StringReader(jslt);
+
+    return jslt.startsWith(RESOURCE)
+        ? readerResource(jslt.substring(RESOURCE.length()))
+        : tryFile.get();
+  }
+
+  /**
+   * Returns a function that transforms JSON using a JSLT script.
+   *
    * @param jslt the JSLT script. If it starts with "resource:" the script is loaded as a class path
    *     resource. If it denotes an existing file it will be loaded from that file. Otherwise it is
    *     interpreted as a JSLT script.
    * @return The transformer function.
    * @since 1.3.4
+   * @deprecated Use the variant with the context.
    */
+  @Deprecated(since = "1.4")
   public static UnaryOperator<JsonObject> tryTransformer(final String jslt) {
     return tryTransformer(jslt, null);
   }
@@ -601,7 +657,9 @@ public class Jslt {
    * @param functions a collection of custom functions. It may be <code>null</code>.
    * @return The transformer function.
    * @since 1.3.4
+   * @deprecated Use the variant with the context.
    */
+  @Deprecated(since = "1.4")
   public static UnaryOperator<JsonObject> tryTransformer(
       final String jslt, final Collection<Function> functions) {
     return tryTransformer(jslt, functions, emptyMap());
@@ -617,7 +675,9 @@ public class Jslt {
    * @param variables pre-set variables. It may be <code>null</code>.
    * @return The transformer function.
    * @since 1.3.4
+   * @deprecated Use the variant with the context.
    */
+  @Deprecated(since = "1.4")
   public static UnaryOperator<JsonObject> tryTransformer(
       final String jslt,
       final Collection<Function> functions,
@@ -637,21 +697,19 @@ public class Jslt {
    *     classpath resolver is used.
    * @return The transformer function.
    * @since 1.3.5
+   * @deprecated Use the variant with the context.
    */
+  @Deprecated(since = "1.4")
   public static UnaryOperator<JsonObject> tryTransformer(
       final String jslt,
       final Collection<Function> functions,
       final Map<String, JsonValue> variables,
       final ResourceResolver resolver) {
-    final Supplier<UnaryOperator<JsonObject>> tryFile =
-        () ->
-            new File(jslt).exists()
-                ? transformer(new File(jslt), functions, variables, resolver)
-                : transformerString(jslt, functions, variables, resolver);
-
-    return jslt.startsWith(RESOURCE)
-        ? transformer(jslt.substring(RESOURCE.length()), functions, variables, resolver)
-        : tryFile.get();
+    return transformerObject(
+        new Context(tryReader(jslt))
+            .withFunctions(functions)
+            .withVariables(variables)
+            .withResolver(resolver));
   }
 
   /**
@@ -659,16 +717,11 @@ public class Jslt {
    *
    * @return The generated function.
    * @since 1.3.13
+   * @deprecated Use the JsltCustom version.
    */
+  @Deprecated(since = "1.4")
   public static Function uriDecode() {
-    return function(
-        "uri-decode",
-        1,
-        1,
-        array ->
-            createValue(
-                tryToGetRethrow(() -> decode(asString(array.get(0)).getString(), "UTF-8"))
-                    .orElse(null)));
+    return JsltCustom.uriDecode();
   }
 
   /**
@@ -676,16 +729,11 @@ public class Jslt {
    *
    * @return The generated function.
    * @since 1.3.13
+   * @deprecated Use the JsltCustom version.
    */
+  @Deprecated(since = "1.4")
   public static Function uriEncode() {
-    return function(
-        "uri-encode",
-        1,
-        1,
-        array ->
-            createValue(
-                tryToGetRethrow(() -> encode(asString(array.get(0)).getString(), "UTF-8"))
-                    .orElse(null)));
+    return JsltCustom.uriEncode();
   }
 
   /**
@@ -693,9 +741,11 @@ public class Jslt {
    *
    * @return The generated function.
    * @since 1.3.6
+   * @deprecated Use the JsltCustom version.
    */
+  @Deprecated(since = "1.4")
   public static Function uuid() {
-    return function("uuid", 0, 0, array -> createValue(randomUUID().toString()));
+    return JsltCustom.uuid();
   }
 
   private static Map<String, JsonNode> variables(final Map<String, JsonValue> variables) {
@@ -707,57 +757,6 @@ public class Jslt {
                     .filter(pair -> pair.second != null)
                     .collect(toMap(pair -> pair.first, pair -> pair.second)))
         .orElseGet(Collections::emptyMap);
-  }
-
-  private static class CustomFunction implements Function {
-    private final BiFunction<JsonNode, JsonNode[], JsonNode> function;
-    private final int minArguments;
-    private final int maxArguments;
-    private final String name;
-
-    private CustomFunction(
-        final String name,
-        final int minArguments,
-        final int maxArguments,
-        final BiFunction<JsonNode, JsonNode[], JsonNode> function) {
-      this.name = name;
-      this.minArguments = minArguments;
-      this.maxArguments = maxArguments;
-      this.function = function;
-    }
-
-    private CustomFunction(final Function delegate) {
-      this.name = delegate.getName();
-      this.minArguments = delegate.getMinArguments();
-      this.maxArguments = delegate.getMaxArguments();
-      this.function = delegate::call;
-    }
-
-    public JsonNode call(final JsonNode input, final JsonNode[] arguments) {
-      return function.apply(input, arguments);
-    }
-
-    @Override
-    public boolean equals(final Object other) {
-      return other instanceof CustomFunction && ((CustomFunction) other).name.equals(name);
-    }
-
-    public String getName() {
-      return name;
-    }
-
-    public int getMinArguments() {
-      return minArguments;
-    }
-
-    public int getMaxArguments() {
-      return maxArguments;
-    }
-
-    @Override
-    public int hashCode() {
-      return name.hashCode();
-    }
   }
 
   /**
@@ -779,6 +778,66 @@ public class Jslt {
 
     public Reader resolve(final String jslt) {
       return ofNullable(map.get(jslt)).map(StringReader::new).orElse(null);
+    }
+  }
+
+  /**
+   * The context for generating JSLT transformer functions.
+   *
+   * @since 1.4
+   */
+  public static class Context {
+    final Collection<Function> functions;
+    final Reader reader;
+    final ResourceResolver resolver;
+    final Map<String, JsonValue> variables;
+
+    public Context(final Reader reader) {
+      this(reader, null, null, null);
+    }
+
+    private Context(
+        final Reader reader,
+        final Collection<Function> functions,
+        final Map<String, JsonValue> variables,
+        final ResourceResolver resolver) {
+      this.reader = reader;
+      this.functions = functions;
+      this.variables = variables != null ? variables : emptyMap();
+      this.resolver = resolver;
+    }
+
+    /**
+     * Sets additional custom functions.
+     *
+     * @param functions the collection of functions.
+     * @return The context.
+     * @since 1.4
+     */
+    public Context withFunctions(final Collection<Function> functions) {
+      return new Context(reader, functions, variables, resolver);
+    }
+
+    /**
+     * Sets the resolver.
+     *
+     * @param resolver the resolver.
+     * @return The context.
+     * @since 1.4
+     */
+    public Context withResolver(final ResourceResolver resolver) {
+      return new Context(reader, functions, variables, resolver);
+    }
+
+    /**
+     * Sets additional variables that can be address with <code>$$name</code>.
+     *
+     * @param variables the variables.
+     * @return The context.
+     * @since 1.4
+     */
+    public Context withVariables(final Map<String, JsonValue> variables) {
+      return new Context(reader, functions, variables, resolver);
     }
   }
 }
