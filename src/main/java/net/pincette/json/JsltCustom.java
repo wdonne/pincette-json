@@ -4,7 +4,11 @@ import static java.lang.Integer.MAX_VALUE;
 import static java.lang.Math.round;
 import static java.net.URLDecoder.decode;
 import static java.net.URLEncoder.encode;
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.stream;
+import static java.util.Base64.getDecoder;
+import static java.util.Base64.getEncoder;
 import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.joining;
 import static javax.json.JsonValue.NULL;
@@ -46,6 +50,42 @@ public class JsltCustom {
   private JsltCustom() {}
 
   /**
+   * This custom function is called "base64-decode". It performs Base64-decoding on its argument.
+   *
+   * @return The generated function.
+   * @since 1.5
+   */
+  public static Function base64Decode() {
+    return function(
+        "base64-decode",
+        1,
+        1,
+        array ->
+            createValue(
+                new String(
+                    getDecoder().decode(asString(array.get(0)).getString().getBytes(US_ASCII)),
+                    UTF_8)));
+  }
+
+  /**
+   * This custom function is called "base64-encode". It performs Base64-encoding on its argument.
+   *
+   * @return The generated function.
+   * @since 1.5
+   */
+  public static Function base64Encode() {
+    return function(
+        "base64-encode",
+        1,
+        1,
+        array ->
+            createValue(
+                new String(
+                    getEncoder().encode(asString(array.get(0)).getString().getBytes(UTF_8)),
+                    US_ASCII)));
+  }
+
+  /**
    * Creates a collection of all custom functions except <code>trace</code>.
    *
    * @return The collection of functions.
@@ -53,7 +93,15 @@ public class JsltCustom {
    */
   public static Collection<Function> customFunctions() {
     return list(
-        getPointer(), parseIsoInstant(), pointer(), setPointer(), uriDecode(), uriEncode(), uuid());
+        base64Decode(),
+        base64Encode(),
+        getPointer(),
+        parseIsoInstant(),
+        pointer(),
+        setPointer(),
+        uriDecode(),
+        uriEncode(),
+        uuid());
   }
 
   /**
@@ -195,7 +243,7 @@ public class JsltCustom {
   }
 
   /**
-   * This custom function is called "uri-decode". It performs URI-decode on its argument.
+   * This custom function is called "uri-decode". It performs URI-decoding on its argument.
    *
    * @return The generated function.
    * @since 1.4

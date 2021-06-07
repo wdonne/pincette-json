@@ -23,10 +23,12 @@ public class JsonGeneratorFilter extends JsonValueGenerator implements JsonGener
   private JsonGenerator next;
   private JsonGenerator saved;
 
+  @Override
   public void close() {
     Optional.ofNullable(next).ifPresent(JsonGenerator::close);
   }
 
+  @Override
   public void flush() {
     Optional.ofNullable(next).ifPresent(JsonGenerator::flush);
   }
@@ -94,6 +96,7 @@ public class JsonGeneratorFilter extends JsonValueGenerator implements JsonGener
     return this;
   }
 
+  @Override
   public JsonGenerator write(final JsonValue value) {
     if (next != null) {
       next.write(value);
@@ -102,6 +105,7 @@ public class JsonGeneratorFilter extends JsonValueGenerator implements JsonGener
     return this;
   }
 
+  @Override
   public JsonGenerator write(final String name, final JsonValue value) {
     if (next != null) {
       next.write(name, value);
@@ -110,6 +114,7 @@ public class JsonGeneratorFilter extends JsonValueGenerator implements JsonGener
     return this;
   }
 
+  @Override
   public JsonGenerator writeEnd() {
     if (next != null) {
       next.writeEnd();
@@ -118,6 +123,7 @@ public class JsonGeneratorFilter extends JsonValueGenerator implements JsonGener
     return this;
   }
 
+  @Override
   public JsonGenerator writeKey(final String name) {
     if (next != null) {
       next.writeKey(name);
@@ -126,6 +132,7 @@ public class JsonGeneratorFilter extends JsonValueGenerator implements JsonGener
     return this;
   }
 
+  @Override
   public JsonGenerator writeNull() {
     if (next != null) {
       next.writeNull();
@@ -134,6 +141,7 @@ public class JsonGeneratorFilter extends JsonValueGenerator implements JsonGener
     return this;
   }
 
+  @Override
   public JsonGenerator writeNull(final String name) {
     if (next != null) {
       next.writeNull(name);
@@ -142,6 +150,7 @@ public class JsonGeneratorFilter extends JsonValueGenerator implements JsonGener
     return this;
   }
 
+  @Override
   public JsonGenerator writeStartArray() {
     if (next != null) {
       next.writeStartArray();
@@ -150,6 +159,7 @@ public class JsonGeneratorFilter extends JsonValueGenerator implements JsonGener
     return this;
   }
 
+  @Override
   public JsonGenerator writeStartArray(final String name) {
     if (next != null) {
       next.writeStartArray(name);
@@ -158,6 +168,7 @@ public class JsonGeneratorFilter extends JsonValueGenerator implements JsonGener
     return this;
   }
 
+  @Override
   public JsonGenerator writeStartObject() {
     if (next != null) {
       next.writeStartObject();
@@ -166,6 +177,7 @@ public class JsonGeneratorFilter extends JsonValueGenerator implements JsonGener
     return this;
   }
 
+  @Override
   public JsonGenerator writeStartObject(final String name) {
     if (next != null) {
       next.writeStartObject(name);

@@ -224,6 +224,10 @@ public class JsonUtil {
     return builder.add(createValue(value));
   }
 
+  public static Optional<JsonArray> arrayValue(final JsonValue value) {
+    return Optional.of(value).filter(JsonUtil::isArray).map(JsonValue::asJsonArray);
+  }
+
   public static JsonArray asArray(final JsonValue value) {
     if (value.getValueType() != JsonValue.ValueType.ARRAY) {
       throw new JsonException("Not an array");
@@ -687,6 +691,10 @@ public class JsonUtil {
                 isObject(j)
                     ? concat(of(j.asJsonObject()), nestedObjects(j.asJsonObject()))
                     : nestedObjects(j.asJsonArray()));
+  }
+
+  public static Optional<JsonObject> objectValue(final JsonValue value) {
+    return Optional.of(value).filter(JsonUtil::isObject).map(JsonValue::asJsonObject);
   }
 
   public static JsonObject remove(final JsonObject obj, final Set<String> fields) {
