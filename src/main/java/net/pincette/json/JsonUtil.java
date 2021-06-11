@@ -540,7 +540,7 @@ public class JsonUtil {
   }
 
   public static Stream<Double> getNumbers(final JsonObject json, final String array) {
-    return getValues(json, array).map(v -> doubleValue(v).orElse(null)).filter(Objects::nonNull);
+    return getValues(json, array, JsonUtil::numbers);
   }
 
   public static Optional<JsonObject> getObject(final JsonStructure json, final String jsonPointer) {
@@ -548,7 +548,7 @@ public class JsonUtil {
   }
 
   public static Stream<JsonObject> getObjects(final JsonObject json, final String array) {
-    return getValues(json, array).filter(JsonUtil::isObject).map(JsonValue::asJsonObject);
+    return getValues(json, array, JsonUtil::objects);
   }
 
   /**
@@ -570,7 +570,7 @@ public class JsonUtil {
   }
 
   public static Stream<String> getStrings(final JsonObject json, final String array) {
-    return getValues(json, array).map(v -> stringValue(v).orElse(null)).filter(Objects::nonNull);
+    return getValues(json, array, JsonUtil::strings);
   }
 
   public static Optional<JsonValue> getValue(final JsonStructure json, final String jsonPointer) {
@@ -578,9 +578,12 @@ public class JsonUtil {
   }
 
   public static Stream<JsonValue> getValues(final JsonObject json, final String array) {
-    return Optional.ofNullable(json.getJsonArray(array))
-        .map(JsonArray::stream)
-        .orElseGet(Stream::empty);
+    return getValues(json, array, Collection::stream);
+  }
+
+  public static <T> Stream<T> getValues(
+      final JsonObject json, final String array, final Function<JsonArray, Stream<T>> values) {
+    return Optional.ofNullable(json.getJsonArray(array)).map(values).orElseGet(Stream::empty);
   }
 
   public static Optional<Integer> intValue(final JsonValue value) {
@@ -693,8 +696,16 @@ public class JsonUtil {
                     : nestedObjects(j.asJsonArray()));
   }
 
+  public static Stream<Double> numbers(final JsonArray array) {
+    return array.stream().map(v -> doubleValue(v).orElse(null)).filter(Objects::nonNull);
+  }
+
   public static Optional<JsonObject> objectValue(final JsonValue value) {
     return Optional.of(value).filter(JsonUtil::isObject).map(JsonValue::asJsonObject);
+  }
+
+  public static Stream<JsonObject> objects(final JsonArray array) {
+    return array.stream().filter(JsonUtil::isObject).map(JsonValue::asJsonObject);
   }
 
   public static JsonObject remove(final JsonObject obj, final Set<String> fields) {
@@ -825,6 +836,10 @@ public class JsonUtil {
         .filter(JsonUtil::isString)
         .map(JsonUtil::asString)
         .map(JsonString::getString);
+  }
+
+  public static Stream<String> strings(final JsonArray array) {
+    return array.stream().map(v -> stringValue(v).orElse(null)).filter(Objects::nonNull);
   }
 
   /**
