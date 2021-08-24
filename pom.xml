@@ -7,7 +7,7 @@
   <groupId>net.pincette</groupId>
   <artifactId>pincette-json</artifactId>
   <packaging>jar</packaging>
-  <version>1.5.1</version>
+  <version>1.6</version>
   <name>pincette-json</name>
   <description>General JSON utilities</description>
   <url>https://github.com/wdonne/pincette-json</url>
@@ -60,17 +60,22 @@
     <dependency>
       <groupId>net.pincette</groupId>
       <artifactId>pincette-common</artifactId>
-      <version>1.8.1</version>
+      <version>1.9.1</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
-      <version>2.12.3</version>
+      <version>2.12.4</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>2.12.3</version>
+      <version>2.12.4</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-yaml</artifactId>
+      <version>2.12.4</version>
     </dependency>
     <dependency>
       <groupId>com.schibsted.spt.data</groupId>
@@ -124,12 +129,12 @@
           </additionalJOptions>
           <links>
             <link>http://docs.oracle.com/javase/8/docs/api/</link>
-            <link>https://www.javadoc.io/doc/net.pincette/pincette-common/1.8/</link>
+            <link>https://www.javadoc.io/doc/net.pincette/pincette-common/1.9.1/</link>
             <link>https://www.javadoc.io/doc/javax.json/javax.json-api/1.1.4/</link>
-            <link>https://www.javadoc.io/doc/com.fasterxml.jackson.dataformat/jackson-core/2.12.3/
+            <link>https://www.javadoc.io/doc/com.fasterxml.jackson.dataformat/jackson-core/2.12.4/
             </link>
             <link>
-              https://www.javadoc.io/doc/com.fasterxml.jackson.dataformat/jackson-databind/2.12.3/
+              https://www.javadoc.io/doc/com.fasterxml.jackson.dataformat/jackson-databind/2.12.4/
             </link>
             <link>https://www.javadoc.io/doc/com.schibsted.spt.data/jslt/0.1.11/</link>
           </links>
@@ -180,7 +185,7 @@
       <plugin>
         <groupId>pl.project13.maven</groupId>
         <artifactId>git-commit-id-plugin</artifactId>
-        <version>4.0.3</version>
+        <version>4.9.10</version>
         <executions>
           <execution>
             <id>get-the-git-infos</id>
