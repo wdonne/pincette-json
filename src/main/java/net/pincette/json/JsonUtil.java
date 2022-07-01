@@ -3,6 +3,7 @@ package net.pincette.json;
 import static java.lang.Double.NEGATIVE_INFINITY;
 import static java.lang.Double.POSITIVE_INFINITY;
 import static java.lang.String.join;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.Instant.ofEpochMilli;
 import static java.time.Instant.parse;
 import static java.util.regex.Pattern.quote;
@@ -38,6 +39,7 @@ import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -440,6 +442,10 @@ public class JsonUtil {
       return from((List) value);
     }
 
+    if (value instanceof byte[]) {
+      return provider.createValue(new String((byte[]) value, UTF_8));
+    }
+
     return provider.createValue(value.toString());
   }
 
@@ -666,6 +672,29 @@ public class JsonUtil {
 
   public static Optional<Long> longValue(final JsonValue value) {
     return Optional.of(value).filter(JsonUtil::isLong).map(JsonUtil::asLong);
+  }
+
+  /**
+   * Merges objects from first to last, overwriting fields in the process.
+   *
+   * @param objects the given objects.
+   * @return The merged object.
+   */
+  public static JsonObject merge(final JsonObject... objects) {
+    return merge(Arrays.stream(objects));
+  }
+
+  /**
+   * Merges objects from first to last, overwriting fields in the process.
+   *
+   * @param objects the given objects.
+   * @return The merged object.
+   */
+  public static JsonObject merge(final Stream<JsonObject> objects) {
+    return objects
+        .flatMap(m -> m.entrySet().stream())
+        .reduce(createObjectBuilder(), (b, e) -> b.add(e.getKey(), e.getValue()), (b1, b2) -> b1)
+        .build();
   }
 
   /**

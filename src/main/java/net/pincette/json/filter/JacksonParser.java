@@ -58,6 +58,12 @@ public class JacksonParser implements JsonParser {
     return event != null && token == VALUE_NUMBER_INT;
   }
 
+  /**
+   * Returns the next parser event. It is <code>null</code> when Jackson returns a <code>
+   * NOT_AVAILABLE</code> token.
+   *
+   * @return The next event.
+   */
   public Event next() {
     final Event result = event != null ? event : nextEvent();
 

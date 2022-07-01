@@ -18,8 +18,8 @@ import javax.json.stream.JsonGenerator;
  * @since 1.0
  */
 public class AccumulatingGeneratorFilter extends JsonGeneratorFilter {
+  private final Deque<String> stack = new ArrayDeque<>();
   private Object builder;
-  private Deque<String> stack = new ArrayDeque<>();
 
   private JsonValue build() {
     return builder instanceof JsonObjectBuilder

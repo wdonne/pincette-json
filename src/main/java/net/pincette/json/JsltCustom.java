@@ -255,7 +255,7 @@ public class JsltCustom {
         1,
         array ->
             createValue(
-                tryToGetRethrow(() -> decode(asString(array.get(0)).getString(), "UTF-8"))
+                tryToGetRethrow(() -> decode(asString(array.get(0)).getString(), UTF_8))
                     .orElse(null)));
   }
 
@@ -272,7 +272,7 @@ public class JsltCustom {
         1,
         array ->
             createValue(
-                tryToGetRethrow(() -> encode(asString(array.get(0)).getString(), "UTF-8"))
+                tryToGetRethrow(() -> encode(asString(array.get(0)).getString(), UTF_8))
                     .orElse(null)));
   }
 

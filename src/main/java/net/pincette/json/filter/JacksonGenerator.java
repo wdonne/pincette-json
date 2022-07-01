@@ -25,7 +25,7 @@ import javax.json.stream.JsonGenerator;
  */
 public class JacksonGenerator implements JsonGenerator {
   private final com.fasterxml.jackson.core.JsonGenerator generator;
-  private Deque<ValueType> stack = new ArrayDeque<>();
+  private final Deque<ValueType> stack = new ArrayDeque<>();
 
   public JacksonGenerator(final com.fasterxml.jackson.core.JsonGenerator generator) {
     this.generator = generator;

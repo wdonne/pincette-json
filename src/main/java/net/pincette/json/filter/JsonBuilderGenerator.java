@@ -23,8 +23,8 @@ import net.pincette.util.Pair;
  * @since 1.0
  */
 public class JsonBuilderGenerator extends JsonValueGenerator {
+  private final Deque<Pair<String, Object>> builders = new ArrayDeque<>();
   private Object builder;
-  private Deque<Pair<String, Object>> builders = new ArrayDeque<>();
   private String lastName;
 
   public JsonBuilderGenerator() {}
