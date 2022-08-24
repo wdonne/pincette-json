@@ -1,8 +1,8 @@
 package net.pincette.json.filter;
 
-import static javax.json.Json.createValue;
 import static javax.json.JsonValue.FALSE;
 import static javax.json.JsonValue.TRUE;
+import static net.pincette.json.JsonUtil.createValue;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -30,45 +30,31 @@ public class JsonValueGenerator implements JsonGenerator {
   }
 
   public JsonGenerator write(String value) {
-    write(createValue(value));
-
-    return this;
+    return write(createValue(value));
   }
 
   public JsonGenerator write(BigDecimal value) {
-    write(createValue(value));
-
-    return this;
+    return write(createValue(value));
   }
 
   public JsonGenerator write(BigInteger value) {
-    write(createValue(value));
-
-    return this;
+    return write(createValue(value));
   }
 
   public JsonGenerator write(int value) {
-    write(createValue(value));
-
-    return this;
+    return write(createValue(value));
   }
 
   public JsonGenerator write(long value) {
-    write(createValue(value));
-
-    return this;
+    return write(createValue(value));
   }
 
   public JsonGenerator write(double value) {
-    write(createValue(value));
-
-    return this;
+    return write(createValue(value));
   }
 
   public JsonGenerator write(boolean value) {
-    write(value ? TRUE : FALSE);
-
-    return this;
+    return write(value ? TRUE : FALSE);
   }
 
   public JsonGenerator write(String name, JsonValue value) {
@@ -76,45 +62,31 @@ public class JsonValueGenerator implements JsonGenerator {
   }
 
   public JsonGenerator write(String name, String value) {
-    write(name, createValue(value));
-
-    return this;
+    return write(name, createValue(value));
   }
 
   public JsonGenerator write(String name, BigInteger value) {
-    write(name, createValue(value));
-
-    return this;
+    return write(name, createValue(value));
   }
 
   public JsonGenerator write(String name, BigDecimal value) {
-    write(name, createValue(value));
-
-    return this;
+    return write(name, createValue(value));
   }
 
   public JsonGenerator write(String name, int value) {
-    write(name, createValue(value));
-
-    return this;
+    return write(name, createValue(value));
   }
 
   public JsonGenerator write(String name, long value) {
-    write(name, createValue(value));
-
-    return this;
+    return write(name, createValue(value));
   }
 
   public JsonGenerator write(String name, double value) {
-    write(name, createValue(value));
-
-    return this;
+    return write(name, createValue(value));
   }
 
   public JsonGenerator write(String name, boolean value) {
-    write(name, value ? TRUE : FALSE);
-
-    return this;
+    return write(name, value ? TRUE : FALSE);
   }
 
   public JsonGenerator writeEnd() {

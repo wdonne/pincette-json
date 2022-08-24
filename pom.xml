@@ -7,7 +7,7 @@
   <groupId>net.pincette</groupId>
   <artifactId>pincette-json</artifactId>
   <packaging>jar</packaging>
-  <version>2.0.1</version>
+  <version>2.0.2</version>
   <name>pincette-json</name>
   <description>General JSON utilities</description>
   <url>https://github.com/wdonne/pincette-json</url>
@@ -60,7 +60,7 @@
     <dependency>
       <groupId>net.pincette</groupId>
       <artifactId>pincette-common</artifactId>
-      <version>2.0.2</version>
+      <version>2.0.3</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
@@ -100,7 +100,7 @@
       <plugin>
         <groupId>org.sonatype.plugins</groupId>
         <artifactId>nexus-staging-maven-plugin</artifactId>
-        <version>1.6.9</version>
+        <version>1.6.13</version>
         <extensions>true</extensions>
         <configuration>
           <serverId>ossrh</serverId>
@@ -133,14 +133,14 @@
           </additionalJOptions>
           <links>
             <link>http://docs.oracle.com/javase/8/docs/api/</link>
-            <link>https://www.javadoc.io/doc/net.pincette/pincette-common/2.0.1/</link>
+            <link>https://www.javadoc.io/doc/net.pincette/pincette-common/2.0.2/</link>
             <link>https://www.javadoc.io/doc/javax.json/javax.json-api/1.1.4/</link>
             <link>https://www.javadoc.io/doc/com.fasterxml.jackson.dataformat/jackson-core/2.13.3/
             </link>
             <link>
               https://www.javadoc.io/doc/com.fasterxml.jackson.dataformat/jackson-databind/2.13.3/
             </link>
-            <link>https://www.javadoc.io/doc/com.schibsted.spt.data/jslt/0.1.11/</link>
+            <link>https://www.javadoc.io/doc/com.schibsted.spt.data/jslt/0.1.12/</link>
           </links>
           <sourceFileExcludes>
             <sourceFileExclude>**/module-info.java</sourceFileExclude>
