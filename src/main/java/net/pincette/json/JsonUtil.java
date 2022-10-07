@@ -6,7 +6,6 @@ import static java.lang.String.join;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.Instant.ofEpochMilli;
 import static java.time.Instant.parse;
-import static java.util.regex.Pattern.quote;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -24,6 +23,7 @@ import static net.pincette.util.Util.autoClose;
 import static net.pincette.util.Util.getLastSegment;
 import static net.pincette.util.Util.getSegments;
 import static net.pincette.util.Util.pathSearch;
+import static net.pincette.util.Util.split;
 import static net.pincette.util.Util.tryToDoWith;
 import static net.pincette.util.Util.tryToDoWithRethrow;
 import static net.pincette.util.Util.tryToGetSilent;
@@ -507,7 +507,7 @@ public class JsonUtil {
    * @return The optional result value.
    */
   public static Optional<JsonValue> get(final JsonObject obj, final String field) {
-    return pathSearch(obj, field.split("\\."));
+    return pathSearch(obj, split(field, "."));
   }
 
   public static Optional<Boolean> getBoolean(final JsonStructure json, final String jsonPointer) {
@@ -538,7 +538,7 @@ public class JsonUtil {
    * @return The last segment.
    */
   public static String getKey(final String path, final String pathDelimiter) {
-    return getLastSegment(path, quote(pathDelimiter)).orElse(path);
+    return getLastSegment(path, pathDelimiter).orElse(path);
   }
 
   public static Optional<Double> getNumber(final JsonStructure json, final String jsonPointer) {
@@ -675,7 +675,7 @@ public class JsonUtil {
   }
 
   /**
-   * Merges objects from first to last, overwriting fields in the process.
+   * Merges objects from first to last, overwriting fields in the process. It is recursive.
    *
    * @param objects the given objects.
    * @return The merged object.
@@ -685,16 +685,13 @@ public class JsonUtil {
   }
 
   /**
-   * Merges objects from first to last, overwriting fields in the process.
+   * Merges objects from first to last, overwriting fields in the process. It is recursive.
    *
    * @param objects the given objects.
    * @return The merged object.
    */
   public static JsonObject merge(final Stream<JsonObject> objects) {
-    return objects
-        .flatMap(m -> m.entrySet().stream())
-        .reduce(createObjectBuilder(), (b, e) -> b.add(e.getKey(), e.getValue()), (b1, b2) -> b1)
-        .build();
+    return from(net.pincette.util.Collections.merge(objects.map(JsonUtil::toNative)));
   }
 
   /**
@@ -888,7 +885,7 @@ public class JsonUtil {
    * @return The JSON pointer.
    */
   public static String toJsonPointer(final String dotSeparatedField) {
-    return "/" + join("/", dotSeparatedField.split("\\."));
+    return "/" + join("/", split(dotSeparatedField, "."));
   }
 
   /**
