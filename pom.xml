@@ -7,7 +7,7 @@
   <groupId>net.pincette</groupId>
   <artifactId>pincette-json</artifactId>
   <packaging>jar</packaging>
-  <version>2.0.7</version>
+  <version>2.0.8</version>
   <name>pincette-json</name>
   <description>General JSON utilities</description>
   <url>https://github.com/wdonne/pincette-json</url>
@@ -46,9 +46,6 @@
     <maven.compiler.target>11</maven.compiler.target>
     <maven.compiler.source>11</maven.compiler.source>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <sonar.projectKey>wdonne_pincette-json</sonar.projectKey>
-    <sonar.organization>wdonne-github</sonar.organization>
-    <sonar.host.url>https://sonarcloud.io</sonar.host.url>
   </properties>
 
   <dependencies>
@@ -60,22 +57,22 @@
     <dependency>
       <groupId>net.pincette</groupId>
       <artifactId>pincette-common</artifactId>
-      <version>2.1.3</version>
+      <version>2.3</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
-      <version>2.14.1</version>
+      <version>2.14.2</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>2.14.1</version>
+      <version>2.14.2</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.dataformat</groupId>
       <artifactId>jackson-dataformat-yaml</artifactId>
-      <version>2.14.1</version>
+      <version>2.14.2</version>
     </dependency>
     <dependency>
       <groupId>net.pincette</groupId>
@@ -122,12 +119,12 @@
           </additionalJOptions>
           <links>
             <link>https://docs.oracle.com/en/java/javase/11/docs/api/</link>
-            <link>https://www.javadoc.io/doc/net.pincette/pincette-common/2.1.3/</link>
+            <link>https://www.javadoc.io/doc/net.pincette/pincette-common/2.2/</link>
             <link>https://www.javadoc.io/doc/javax.json/javax.json-api/1.1.4/</link>
-            <link>https://www.javadoc.io/doc/com.fasterxml.jackson.dataformat/jackson-core/2.14.1/
+            <link>https://www.javadoc.io/doc/com.fasterxml.jackson.dataformat/jackson-core/2.14.2/
             </link>
             <link>
-              https://www.javadoc.io/doc/com.fasterxml.jackson.dataformat/jackson-databind/2.14.1/
+              https://www.javadoc.io/doc/com.fasterxml.jackson.dataformat/jackson-databind/2.14.2/
             </link>
             <link>https://www.javadoc.io/doc/com.schibsted.spt.data/jslt/0.1.14/</link>
           </links>

@@ -945,6 +945,32 @@ public class JsonUtil {
         : value.toString();
   }
 
+  public static JsonObjectBuilder transformFieldNames(
+      final JsonObject json, final UnaryOperator<String> op) {
+    return json.entrySet().stream()
+        .map(e -> pair(op.apply(e.getKey()), transformFieldNames(e.getValue(), op)))
+        .reduce(createObjectBuilder(), (b, pair) -> b.add(pair.first, pair.second), (b1, b2) -> b1);
+  }
+
+  public static JsonArrayBuilder transformFieldNames(
+      final JsonArray json, final UnaryOperator<String> op) {
+    return json.stream()
+        .map(v -> transformFieldNames(v, op))
+        .reduce(createArrayBuilder(), JsonArrayBuilder::add, (b1, b2) -> b1);
+  }
+
+  public static JsonValue transformFieldNames(
+      final JsonValue json, final UnaryOperator<String> op) {
+    switch (json.getValueType()) {
+      case OBJECT:
+        return transformFieldNames(json.asJsonObject(), op).build();
+      case ARRAY:
+        return transformFieldNames(json.asJsonArray(), op).build();
+      default:
+        return json;
+    }
+  }
+
   public static InputStream transformToXML(final JsonStructure json) {
     return Optional.of(new ByteArrayOutputStream())
         .map(
