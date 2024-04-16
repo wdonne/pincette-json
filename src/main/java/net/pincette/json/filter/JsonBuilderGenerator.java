@@ -19,7 +19,7 @@ import net.pincette.util.Pair;
 /**
  * Accumulates a JSON stream in a given JSON builder.
  *
- * @author Werner Donn\u00e9
+ * @author Werner Donné
  * @since 1.0
  */
 public class JsonBuilderGenerator extends JsonValueGenerator {
@@ -38,9 +38,9 @@ public class JsonBuilderGenerator extends JsonValueGenerator {
   }
 
   private static void add(final Object parent, final Pair<String, Object> builder) {
-    if (parent instanceof JsonObjectBuilder) {
+    if (parent instanceof JsonObjectBuilder jsonObjectBuilder) {
       if (builder.first != null) {
-        ((JsonObjectBuilder) parent).add(builder.first, build(builder.second));
+        jsonObjectBuilder.add(builder.first, build(builder.second));
       }
     } else {
       ((JsonArrayBuilder) parent).add(build(builder.second));
@@ -48,8 +48,8 @@ public class JsonBuilderGenerator extends JsonValueGenerator {
   }
 
   private static JsonStructure build(final Object builder) {
-    return builder instanceof JsonObjectBuilder
-        ? ((JsonObjectBuilder) builder).build()
+    return builder instanceof JsonObjectBuilder jsonObjectBuilder
+        ? jsonObjectBuilder.build()
         : ((JsonArrayBuilder) builder).build();
   }
 

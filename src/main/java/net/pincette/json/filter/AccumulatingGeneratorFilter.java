@@ -14,7 +14,7 @@ import javax.json.stream.JsonGenerator;
  * This filter accumulates objects and arrays and writes them to the next filter element with the
  * <code>JsonValue</code> variants of the <code>write</code> method.
  *
- * @author Werner Donn\u00e9
+ * @author Werner Donné
  * @since 1.0
  */
 public class AccumulatingGeneratorFilter extends JsonGeneratorFilter {
@@ -22,8 +22,8 @@ public class AccumulatingGeneratorFilter extends JsonGeneratorFilter {
   private Object builder;
 
   private JsonValue build() {
-    return builder instanceof JsonObjectBuilder
-        ? ((JsonObjectBuilder) builder).build()
+    return builder instanceof JsonObjectBuilder jsonObjectBuilder
+        ? jsonObjectBuilder.build()
         : ((JsonArrayBuilder) builder).build();
   }
 

@@ -26,7 +26,7 @@ import net.pincette.util.Pair;
 /**
  * A validation utility for JSON.
  *
- * @author Werner Donn\u00e9
+ * @author Werner Donné
  * @since 1.0
  */
 public class Validate {
@@ -107,12 +107,12 @@ public class Validate {
    */
   public static boolean hasErrors(final JsonArray array) {
     return array.stream()
-        .anyMatch(value -> value instanceof JsonObject && hasErrors((JsonObject) value));
+        .anyMatch(value -> value instanceof JsonObject jsonObject && hasErrors(jsonObject));
   }
 
   public static boolean hasErrors(final JsonStructure json) {
-    return (json instanceof JsonObject && hasErrors((JsonObject) json))
-        || (json instanceof JsonArray && hasErrors((JsonArray) json));
+    return (json instanceof JsonObject jsonObject && hasErrors(jsonObject))
+        || (json instanceof JsonArray jsonArray && hasErrors(jsonArray));
   }
 
   public static ValidationResult isArray(final ValidationContext context) {
@@ -280,7 +280,7 @@ public class Validate {
 
                   return true;
                 })
-            .reduce(false, (e1, e2) -> e1 || e2);
+            .reduce(false, (e1, e2) -> true);
 
     if (errors) {
       builder.add(ERROR, true);

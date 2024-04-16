@@ -94,20 +94,11 @@ public class ForEach {
       final boolean keepNull) {
     final JsonValue result = transform.apply(location);
 
-    switch (result.getValueType()) {
-      case NUMBER:
-      case STRING:
-      case TRUE:
-      case FALSE:
-      case NULL:
-        return result;
-      case OBJECT:
-        return forEach(location, result.asJsonObject(), transform, keepNull);
-      case ARRAY:
-        return forEach(location, result.asJsonArray(), transform, keepNull);
-      default:
-        return null;
-    }
+    return switch (result.getValueType()) {
+      case NUMBER, STRING, TRUE, FALSE, NULL -> result;
+      case OBJECT -> forEach(location, result.asJsonObject(), transform, keepNull);
+      case ARRAY -> forEach(location, result.asJsonArray(), transform, keepNull);
+    };
   }
 
   private static JsonValue forEach(

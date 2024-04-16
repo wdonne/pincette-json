@@ -4,7 +4,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static net.pincette.json.Jackson.from;
@@ -39,7 +38,7 @@ import net.pincette.json.JsltCustom.CustomFunction;
 /**
  * JSLT utilities.
  *
- * @author Werner Donn\u00e9
+ * @author Werner Donné
  * @since 1.1
  */
 public class Jslt {
@@ -74,7 +73,7 @@ public class Jslt {
   }
 
   private static Collection<Function> toFunction(final Set<CustomFunction> functions) {
-    return functions.stream().map(Function.class::cast).collect(toList());
+    return functions.stream().map(Function.class::cast).toList();
   }
 
   /**
@@ -113,7 +112,7 @@ public class Jslt {
             .compile();
     final Map<String, JsonNode> vars = variables(context.variables);
 
-    return json -> ofNullable(to(jslt.apply(vars, from(json)))).orElse(null);
+    return json -> to(jslt.apply(vars, from(json)));
   }
 
   /**

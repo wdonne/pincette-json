@@ -14,7 +14,7 @@ import javax.json.stream.JsonParser;
 /**
  * A JSON parser that gets everything from a Jackson parser.
  *
- * @author Werner Donn\u00e9
+ * @author Werner Donné
  * @since 1.0
  */
 public class JacksonParser implements JsonParser {
@@ -75,32 +75,19 @@ public class JacksonParser implements JsonParser {
   private Event nextEvent() {
     token = tryToGetRethrow(parser::nextToken).orElse(NOT_AVAILABLE);
 
-    switch (token) {
-      case END_ARRAY:
-        return Event.END_ARRAY;
-      case END_OBJECT:
-        return Event.END_OBJECT;
-      case FIELD_NAME:
-        return Event.KEY_NAME;
-      case NOT_AVAILABLE:
-        return null;
-      case VALUE_NULL:
-        return Event.VALUE_NULL;
-      case VALUE_TRUE:
-        return Event.VALUE_TRUE;
-      case START_ARRAY:
-        return Event.START_ARRAY;
-      case VALUE_FALSE:
-        return Event.VALUE_FALSE;
-      case START_OBJECT:
-        return Event.START_OBJECT;
-      case VALUE_STRING:
-        return Event.VALUE_STRING;
-      case VALUE_NUMBER_INT:
-      case VALUE_NUMBER_FLOAT:
-        return Event.VALUE_NUMBER;
-      default:
-        throw new NoSuchElementException();
-    }
+    return switch (token) {
+      case END_ARRAY -> Event.END_ARRAY;
+      case END_OBJECT -> Event.END_OBJECT;
+      case FIELD_NAME -> Event.KEY_NAME;
+      case NOT_AVAILABLE -> null;
+      case VALUE_NULL -> Event.VALUE_NULL;
+      case VALUE_TRUE -> Event.VALUE_TRUE;
+      case START_ARRAY -> Event.START_ARRAY;
+      case VALUE_FALSE -> Event.VALUE_FALSE;
+      case START_OBJECT -> Event.START_OBJECT;
+      case VALUE_STRING -> Event.VALUE_STRING;
+      case VALUE_NUMBER_INT, VALUE_NUMBER_FLOAT -> Event.VALUE_NUMBER;
+      default -> throw new NoSuchElementException();
+    };
   }
 }

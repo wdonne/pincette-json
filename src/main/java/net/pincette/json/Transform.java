@@ -23,7 +23,7 @@ import javax.json.JsonValue;
  * A transformation utility for JSON. It lets you set up a chain of transformers through which a
  * JSON structure is run. The changes performed by one element in the chain are visible to the next.
  *
- * @author Werner Donn\u00e9
+ * @author Werner Donné
  * @since 1.0
  */
 public class Transform {
@@ -39,7 +39,7 @@ public class Transform {
   }
 
   private static String getPath(final String parent, final String key, final String pathDelimiter) {
-    return (parent != null && !"".equals(parent) ? (parent + pathDelimiter) : "") + key;
+    return (parent != null && !parent.isEmpty() ? (parent + pathDelimiter) : "") + key;
   }
 
   /**
@@ -117,8 +117,8 @@ public class Transform {
       final String parent,
       final Transformer transformer,
       final String pathDelimiter) {
-    return json instanceof JsonStructure
-        ? transform((JsonStructure) json, parent, transformer, pathDelimiter)
+    return json instanceof JsonStructure jsonStructure
+        ? transform(jsonStructure, parent, transformer, pathDelimiter)
         : json;
   }
 
@@ -156,8 +156,8 @@ public class Transform {
       final String parent,
       final Transformer transformer,
       final String pathDelimiter) {
-    return json instanceof JsonArray
-        ? transform((JsonArray) json, parent, transformer, pathDelimiter)
+    return json instanceof JsonArray jsonArray
+        ? transform(jsonArray, parent, transformer, pathDelimiter)
         : transform((JsonObject) json, parent, transformer, pathDelimiter);
   }
 

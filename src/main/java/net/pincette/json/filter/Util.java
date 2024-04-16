@@ -30,7 +30,7 @@ import net.pincette.json.JsonUtil;
 /**
  * Some JSON streaming and filter utilities.
  *
- * @author Werner Donn\u00e9
+ * @author Werner Donné
  */
 public class Util {
   private Util() {}
@@ -169,24 +169,16 @@ public class Util {
   }
 
   public static JsonValue getValue(final Event e, final JsonParser parser) {
-    switch (e) {
-      case VALUE_NULL:
-        return NULL;
-      case VALUE_STRING:
-        return createValue(parser.getString());
-      case START_ARRAY:
-        return getArray(parser);
-      case START_OBJECT:
-        return getObject(parser);
-      case VALUE_TRUE:
-        return TRUE;
-      case VALUE_FALSE:
-        return FALSE;
-      case VALUE_NUMBER:
-        return createValue(parser.getBigDecimal());
-      default:
-        return null;
-    }
+    return switch (e) {
+      case VALUE_NULL -> NULL;
+      case VALUE_STRING -> createValue(parser.getString());
+      case START_ARRAY -> getArray(parser);
+      case START_OBJECT -> getObject(parser);
+      case VALUE_TRUE -> TRUE;
+      case VALUE_FALSE -> FALSE;
+      case VALUE_NUMBER -> createValue(parser.getBigDecimal());
+      default -> null;
+    };
   }
 
   /**
@@ -247,8 +239,7 @@ public class Util {
   public static JsonGenerator writeEvent(
       final Event e, final JsonParser parser, final JsonGenerator generator) {
     switch (e) {
-      case END_ARRAY:
-      case END_OBJECT:
+      case END_ARRAY, END_OBJECT:
         generator.writeEnd();
         break;
       case KEY_NAME:

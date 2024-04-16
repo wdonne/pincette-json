@@ -43,7 +43,7 @@ import net.pincette.function.SideEffect;
 /**
  * Customs functions for JSLT.
  *
- * @author Werner Donn\u00e9
+ * @author Werner Donné
  * @since 1.4
  */
 public class JsltCustom {
@@ -316,7 +316,7 @@ public class JsltCustom {
 
     @Override
     public boolean equals(final Object other) {
-      return other instanceof CustomFunction && ((CustomFunction) other).name.equals(name);
+      return other instanceof CustomFunction customFunction && customFunction.name.equals(name);
     }
 
     public String getName() {

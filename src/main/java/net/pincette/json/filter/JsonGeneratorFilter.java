@@ -16,7 +16,7 @@ import javax.json.stream.JsonGenerator;
  *
  * <p>The value writers in this class call the variants with the <code>JsonValue</code> type.
  *
- * @author Werner Donn\u00e9
+ * @author Werner Donné
  * @since 1.0
  */
 public class JsonGeneratorFilter extends JsonValueGenerator implements JsonGenerator {
@@ -86,8 +86,8 @@ public class JsonGeneratorFilter extends JsonValueGenerator implements JsonGener
     if (this.next == null) {
       this.next = next;
     } else {
-      if (this.next instanceof JsonGeneratorFilter) {
-        ((JsonGeneratorFilter) this.next).thenApply(next);
+      if (this.next instanceof JsonGeneratorFilter jsonGeneratorFilter) {
+        jsonGeneratorFilter.thenApply(next);
       } else {
         throw new JsonException("Unsupported operation");
       }

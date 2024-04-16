@@ -7,7 +7,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.Instant.ofEpochMilli;
 import static java.time.Instant.parse;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Stream.concat;
 import static java.util.stream.Stream.empty;
@@ -18,6 +17,7 @@ import static javax.json.spi.JsonProvider.provider;
 import static javax.xml.stream.XMLOutputFactory.newInstance;
 import static net.pincette.json.Transform.setTransformer;
 import static net.pincette.json.Transform.transform;
+import static net.pincette.util.Cases.withValue;
 import static net.pincette.util.Pair.pair;
 import static net.pincette.util.Util.autoClose;
 import static net.pincette.util.Util.getLastSegment;
@@ -86,7 +86,7 @@ import net.pincette.xml.JsonEventReader;
 /**
  * Some JSON-utilities.
  *
- * @author Werner Donn\u00e9
+ * @author Werner Donné
  */
 public class JsonUtil {
   public static final Function<JsonObject, ?> EVALUATOR =
@@ -394,59 +394,29 @@ public class JsonUtil {
   }
 
   public static JsonValue createValue(final Object value) {
-    if (value == null) {
-      return JsonValue.NULL;
-    }
-
-    if (value instanceof JsonValue) {
-      return (JsonValue) value;
-    }
-
-    if (value instanceof Boolean) {
-      return ((boolean) value) ? JsonValue.TRUE : JsonValue.FALSE;
-    }
-
-    if (value instanceof Integer) {
-      return provider.createValue((int) value);
-    }
-
-    if (value instanceof Long) {
-      return provider.createValue((long) value);
-    }
-
-    if (value instanceof BigInteger) {
-      return provider.createValue((BigInteger) value);
-    }
-
-    if (value instanceof BigDecimal) {
-      return provider.createValue((BigDecimal) value);
-    }
-
-    if (isValidDouble(value) || isValidFloat(value)) {
-      return provider.createValue(((Number) value).doubleValue());
-    }
-
-    if (value instanceof Date) {
-      return provider.createValue(ofEpochMilli(((Date) value).getTime()).toString());
-    }
-
-    if (value instanceof Map) {
-      return from((Map) value);
-    }
-
-    if (value instanceof Stream) {
-      return from((Stream) value);
-    }
-
-    if (value instanceof List) {
-      return from((List) value);
-    }
-
-    if (value instanceof byte[]) {
-      return provider.createValue(new String((byte[]) value, UTF_8));
-    }
-
-    return provider.createValue(value.toString());
+    return (JsonValue)
+        withValue(value)
+            .or(Objects::isNull, v -> JsonValue.NULL)
+            .or(JsonValue.class::isInstance, v -> v)
+            .or(
+                Boolean.class::isInstance,
+                v -> ((boolean) value) ? JsonValue.TRUE : JsonValue.FALSE)
+            .or(Integer.class::isInstance, v -> provider.createValue((int) value))
+            .or(Long.class::isInstance, v -> provider.createValue((long) value))
+            .or(BigInteger.class::isInstance, v -> provider.createValue((BigInteger) v))
+            .or(BigDecimal.class::isInstance, v -> provider.createValue((BigDecimal) v))
+            .or(
+                v -> isValidDouble(v) || isValidFloat(v),
+                v -> provider.createValue(((Number) value).doubleValue()))
+            .or(
+                Date.class::isInstance,
+                v -> provider.createValue(ofEpochMilli(((Date) v).getTime()).toString()))
+            .or(Map.class::isInstance, v -> from((Map<String, ?>) v))
+            .or(Stream.class::isInstance, v -> from((Stream<?>) v))
+            .or(List.class::isInstance, v -> from((List<?>) v))
+            .or(byte[].class::isInstance, v -> provider.createValue(new String((byte[]) v, UTF_8)))
+            .get()
+            .orElseGet(() -> provider.createValue(value.toString()));
   }
 
   public static JsonWriter createWriter(final OutputStream out) {
@@ -868,6 +838,13 @@ public class JsonUtil {
     return array.stream().map(v -> stringValue(v).orElse(null)).filter(Objects::nonNull);
   }
 
+  private static JsonEventReader structureEventReader(final JsonStructure json) {
+    return new JsonEventReader(
+        json instanceof JsonObject jsonObject
+            ? createParserFactory(null).createParser(jsonObject)
+            : createParserFactory(null).createParser((JsonArray) json));
+  }
+
   /**
    * Transforms a JSON pointer in the form "/a/b/c" into a dot-separated field in the form "a.b.c".
    *
@@ -895,24 +872,15 @@ public class JsonUtil {
    * @return The converted value.
    */
   public static Object toNative(final JsonValue value) {
-    switch (value.getValueType()) {
-      case ARRAY:
-        return toNative(asArray(value));
-      case FALSE:
-        return false;
-      case TRUE:
-        return true;
-      case NUMBER:
-        return convertNumber(asNumber(value));
-      case OBJECT:
-        return toNative(asObject(value));
-      case STRING:
-        return asString(value).getString();
-      case NULL:
-        return null;
-      default:
-        return value;
-    }
+    return switch (value.getValueType()) {
+      case ARRAY -> toNative(asArray(value));
+      case FALSE -> false;
+      case TRUE -> true;
+      case NUMBER -> convertNumber(asNumber(value));
+      case OBJECT -> toNative(asObject(value));
+      case STRING -> asString(value).getString();
+      case NULL -> null;
+    };
   }
 
   /**
@@ -922,7 +890,7 @@ public class JsonUtil {
    * @return The generated list.
    */
   public static List<Object> toNative(final JsonArray array) {
-    return array.stream().map(JsonUtil::toNative).collect(toList());
+    return array.stream().map(JsonUtil::toNative).toList();
   }
 
   /**
@@ -961,14 +929,11 @@ public class JsonUtil {
 
   public static JsonValue transformFieldNames(
       final JsonValue json, final UnaryOperator<String> op) {
-    switch (json.getValueType()) {
-      case OBJECT:
-        return transformFieldNames(json.asJsonObject(), op).build();
-      case ARRAY:
-        return transformFieldNames(json.asJsonArray(), op).build();
-      default:
-        return json;
-    }
+    return switch (json.getValueType()) {
+      case OBJECT -> transformFieldNames(json.asJsonObject(), op).build();
+      case ARRAY -> transformFieldNames(json.asJsonArray(), op).build();
+      default -> json;
+    };
   }
 
   public static InputStream transformToXML(final JsonStructure json) {
@@ -981,14 +946,7 @@ public class JsonUtil {
                                 autoClose(
                                     () -> newInstance().createXMLEventWriter(out),
                                     XMLEventWriter::close),
-                                writer ->
-                                    writer.add(
-                                        new JsonEventReader(
-                                            json instanceof JsonObject
-                                                ? createParserFactory(null)
-                                                    .createParser((JsonObject) json)
-                                                : createParserFactory(null)
-                                                    .createParser((JsonArray) json)))))
+                                writer -> writer.add(structureEventReader(json))))
                     .andThenGet(() -> out))
         .map(ByteArrayOutputStream::toByteArray)
         .map(ByteArrayInputStream::new)
