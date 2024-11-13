@@ -279,7 +279,7 @@ public class JsonUtil {
   }
 
   private static Object convertNumber(final JsonNumber number) {
-    return number.isIntegral() ? number.longValue() : number.doubleValue();
+    return number.isIntegral() ? (Object) number.longValue() : (Object) number.doubleValue();
   }
 
   public static JsonObjectBuilder copy(final JsonObject obj, final JsonObjectBuilder builder) {
