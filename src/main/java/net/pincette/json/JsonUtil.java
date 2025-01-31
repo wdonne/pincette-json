@@ -238,6 +238,14 @@ public class JsonUtil {
     return (JsonArray) value;
   }
 
+  public static boolean asBoolean(final JsonValue value) {
+    if (!isBoolean(value)) {
+      throw new JsonException("Not a boolean");
+    }
+
+    return value.getValueType() == TRUE;
+  }
+
   public static double asDouble(final JsonValue value) {
     return asNumber(value).doubleValue();
   }

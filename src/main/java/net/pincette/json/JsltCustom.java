@@ -1,6 +1,7 @@
 package net.pincette.json;
 
 import static java.lang.Integer.MAX_VALUE;
+import static java.lang.Math.min;
 import static java.lang.Math.round;
 import static java.net.URLDecoder.decode;
 import static java.net.URLEncoder.encode;
@@ -15,6 +16,7 @@ import static javax.json.JsonValue.NULL;
 import static net.pincette.json.Jackson.from;
 import static net.pincette.json.Jackson.to;
 import static net.pincette.json.JsonUtil.add;
+import static net.pincette.json.JsonUtil.asInt;
 import static net.pincette.json.JsonUtil.asString;
 import static net.pincette.json.JsonUtil.createArrayBuilder;
 import static net.pincette.json.JsonUtil.createValue;
@@ -99,6 +101,7 @@ public class JsltCustom {
         parseIsoInstant(),
         pointer(),
         setPointer(),
+        substr(),
         uriDecode(),
         uriEncode(),
         uuid());
@@ -222,6 +225,37 @@ public class JsltCustom {
                                 toDotSeparated(asString(triple.second).getString()),
                                 triple.third))
                 .orElse(NULL));
+  }
+
+  /**
+   * This custom function is called "substr". It requires two or three arguments: a string, a start
+   * index and optionally an end index. The default of the latter is the length of the string. The
+   * function returns the substring of the given string.
+   *
+   * @return The generated function.
+   * @since 2.2.0
+   */
+  public static Function substr() {
+    return function(
+        "substr",
+        2,
+        3,
+        array ->
+            createValue(
+                tryToGetRethrow(
+                        () ->
+                            Optional.of(asString(array.get(0)).getString())
+                                .map(
+                                    s ->
+                                        s.substring(
+                                            asInt(array.get(1)),
+                                            min(
+                                                s.length(),
+                                                array.size() > 2
+                                                    ? asInt(array.get(2))
+                                                    : s.length())))
+                                .orElse(null))
+                    .orElse(null)));
   }
 
   /**
