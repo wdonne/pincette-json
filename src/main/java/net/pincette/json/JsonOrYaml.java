@@ -25,7 +25,7 @@ import net.pincette.json.filter.JsonParserWrapper;
 /**
  * Convenience methods to read and write YAML or JSON for situations where both are supported.
  *
- * @author Werner Donn\u00e9
+ * @author Werner Donné
  * @since 1.6
  */
 public class JsonOrYaml {
@@ -40,8 +40,7 @@ public class JsonOrYaml {
   private static Optional<File> getFile(final String filename) {
     return Optional.of(new File(filename))
         .filter(File::exists)
-        .map(Optional::of)
-        .orElseGet(() -> getFile(filename, new String[] {"yml", "yaml", "json"}));
+        .or(() -> getFile(filename, new String[] {"yml", "yaml", "json"}));
   }
 
   private static Optional<File> getFile(final String filename, final String[] extensions) {

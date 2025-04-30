@@ -7,7 +7,7 @@ import javax.json.stream.JsonGenerator;
 /**
  * Removes empty arrays from the stream unless it is the top array.
  *
- * @author Werner Donn\u00e9
+ * @author Werner Donné
  * @since 1.0
  */
 public class RemoveEmptyArraysGenerator extends JsonGeneratorFilter {

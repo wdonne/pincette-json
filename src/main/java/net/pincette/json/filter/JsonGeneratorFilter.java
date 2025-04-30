@@ -85,12 +85,10 @@ public class JsonGeneratorFilter extends JsonValueGenerator implements JsonGener
   public JsonGeneratorFilter thenApply(final JsonGenerator next) {
     if (this.next == null) {
       this.next = next;
+    } else if (this.next instanceof JsonGeneratorFilter jsonGeneratorFilter) {
+      jsonGeneratorFilter.thenApply(next);
     } else {
-      if (this.next instanceof JsonGeneratorFilter jsonGeneratorFilter) {
-        jsonGeneratorFilter.thenApply(next);
-      } else {
-        throw new JsonException("Unsupported operation");
-      }
+      throw new JsonException("Unsupported operation");
     }
 
     return this;

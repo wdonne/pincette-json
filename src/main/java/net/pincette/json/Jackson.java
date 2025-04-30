@@ -27,31 +27,23 @@ import javax.json.JsonValue;
  * Conversion functions between <code>javax.json.JsonValue</code> and <code>com.fasterxml.jackson
  * .databind.JsonNode</code>.
  *
- * @author Werner Donn\u00e9
+ * @author Werner Donné
  * @since 1.0
  */
 public class Jackson {
   private Jackson() {}
 
   public static JsonNode from(final JsonValue json) {
-    switch (json.getValueType()) {
-      case ARRAY:
-        return from(json.asJsonArray());
-      case FALSE:
-        return instance.booleanNode(false);
-      case NULL:
-        return instance.nullNode();
-      case NUMBER:
-        return from(asNumber(json));
-      case OBJECT:
-        return from(json.asJsonObject());
-      case STRING:
-        return instance.textNode(asString(json).getString());
-      case TRUE:
-        return instance.booleanNode(true);
-      default:
-        return null;
-    }
+    return switch (json.getValueType()) {
+      case ARRAY -> from(json.asJsonArray());
+      case FALSE -> instance.booleanNode(false);
+      case NULL -> instance.nullNode();
+      case NUMBER -> from(asNumber(json));
+      case OBJECT -> from(json.asJsonObject());
+      case STRING -> instance.textNode(asString(json).getString());
+      case TRUE -> instance.booleanNode(true);
+      default -> null;
+    };
   }
 
   private static ValueNode from(final JsonNumber number) {
@@ -78,26 +70,19 @@ public class Jackson {
   }
 
   public static JsonValue to(final JsonNode json) {
-    switch (json.getNodeType()) {
-      case ARRAY:
-        return to((ArrayNode) json);
-      case BOOLEAN:
-        return json.booleanValue() ? TRUE : FALSE;
-      case NULL:
-        return NULL;
-      case NUMBER:
-        return toNumber(json);
-      case OBJECT:
-        return to((ObjectNode) json);
-      case STRING:
-        return createValue(json.textValue());
-      default:
-        return null;
-    }
+    return switch (json.getNodeType()) {
+      case ARRAY -> to((ArrayNode) json);
+      case BOOLEAN -> json.booleanValue() ? TRUE : FALSE;
+      case NULL -> NULL;
+      case NUMBER -> toNumber(json);
+      case OBJECT -> to((ObjectNode) json);
+      case STRING -> createValue(json.textValue());
+      default -> null;
+    };
   }
 
   public static JsonObject to(final ObjectNode json) {
-    return stream(json.fields())
+    return json.properties().stream()
         .map(e -> pair(e.getKey(), to(e.getValue())))
         .filter(pair -> pair.second != null)
         .reduce(

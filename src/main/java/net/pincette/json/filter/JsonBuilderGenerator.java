@@ -130,16 +130,12 @@ public class JsonBuilderGenerator extends JsonValueGenerator {
 
   @Override
   public JsonGenerator writeNull() {
-    write(JsonValue.NULL);
-
-    return this;
+    return write(JsonValue.NULL);
   }
 
   @Override
   public JsonGenerator writeNull(final String name) {
-    write(name, JsonValue.NULL);
-
-    return this;
+    return write(name, JsonValue.NULL);
   }
 
   @Override

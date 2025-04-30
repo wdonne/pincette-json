@@ -238,36 +238,16 @@ public class Util {
    */
   public static JsonGenerator writeEvent(
       final Event e, final JsonParser parser, final JsonGenerator generator) {
-    switch (e) {
-      case END_ARRAY, END_OBJECT:
-        generator.writeEnd();
-        break;
-      case KEY_NAME:
-        generator.writeKey(parser.getString());
-        break;
-      case START_ARRAY:
-        generator.writeStartArray();
-        break;
-      case START_OBJECT:
-        generator.writeStartObject();
-        break;
-      case VALUE_FALSE:
-        generator.write(false);
-        break;
-      case VALUE_NULL:
-        generator.writeNull();
-        break;
-      case VALUE_NUMBER:
-        generator.write(parser.getBigDecimal());
-        break;
-      case VALUE_STRING:
-        generator.write(parser.getString());
-        break;
-      case VALUE_TRUE:
-        generator.write(true);
-        break;
-    }
-
-    return generator;
+    return switch (e) {
+      case END_ARRAY, END_OBJECT -> generator.writeEnd();
+      case KEY_NAME -> generator.writeKey(parser.getString());
+      case START_ARRAY -> generator.writeStartArray();
+      case START_OBJECT -> generator.writeStartObject();
+      case VALUE_FALSE -> generator.write(false);
+      case VALUE_NULL -> generator.writeNull();
+      case VALUE_NUMBER -> generator.write(parser.getBigDecimal());
+      case VALUE_STRING -> generator.write(parser.getString());
+      case VALUE_TRUE -> generator.write(true);
+    };
   }
 }

@@ -4,9 +4,9 @@ import javax.json.JsonValue;
 import javax.json.stream.JsonGenerator;
 
 /**
- * This filter flushes every write down stream, which can be interesting for debugging purposes.
+ * This filter flushes every write downstream, which can be interesting for debugging purposes.
  *
- * @author Werner Donn\u00e9
+ * @author Werner Donné
  * @since 1.0
  */
 public class FlushingGenerator extends JsonGeneratorFilter {

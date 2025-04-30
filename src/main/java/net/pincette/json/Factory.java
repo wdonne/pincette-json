@@ -15,7 +15,7 @@ import net.pincette.util.Pair;
 /**
  * A class to create fixed JSON structures in a very compact way.
  *
- * @author Werner Donn\u00e9
+ * @author Werner Donné
  * @since 1.2
  */
 public class Factory {

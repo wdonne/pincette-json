@@ -16,7 +16,7 @@ import javax.json.stream.JsonParser;
  * This class implements the default methods in the <code>JsonParser</code> interface and delegates
  * all event operations.
  *
- * @author Werner Donn\u00e8
+ * @author Werner Donné
  * @since 1.0
  */
 public class JsonParserWrapper implements JsonParser {

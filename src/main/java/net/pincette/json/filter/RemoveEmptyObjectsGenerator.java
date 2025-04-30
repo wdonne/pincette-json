@@ -6,7 +6,7 @@ import javax.json.stream.JsonGenerator;
 /**
  * Removes empty objects from the stream unless it is the top object.
  *
- * @author Werner Donn\u00e9
+ * @author Werner Donné
  * @since 1.0
  */
 public class RemoveEmptyObjectsGenerator extends JsonGeneratorFilter {

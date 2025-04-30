@@ -13,7 +13,7 @@ import javax.json.JsonValue;
 /**
  * Some utilities to analyse JSON patches.
  *
- * @author Werner Donn\u00e9
+ * @author Werner Donné
  * @since 1.0
  */
 public class Patch {
@@ -44,7 +44,7 @@ public class Patch {
    */
   public static boolean added(
       final JsonArray patch, final JsonObject original, final String jsonPointer) {
-    return !getValue(original, jsonPointer).isPresent() && isSet(patch, jsonPointer);
+    return getValue(original, jsonPointer).isEmpty() && isSet(patch, jsonPointer);
   }
 
   /**

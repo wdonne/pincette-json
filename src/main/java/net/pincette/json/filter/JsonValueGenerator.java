@@ -13,7 +13,7 @@ import javax.json.stream.JsonGenerator;
  * The <code>write</code> methods call <code>JsonValue</code> variants for scalar values, so only
  * those have to be overridden.
  *
- * @author Werner Donn\u00e9
+ * @author Werner Donné
  * @since 1.0
  */
 public class JsonValueGenerator implements JsonGenerator {

@@ -18,7 +18,7 @@ import javax.json.JsonStructure;
 /**
  * Parses a stream of unrelated JSON objects and arrays that follow one another on an input stream.
  *
- * @author Werner Donn\u00e9
+ * @author Werner Donné
  * @since 1.3
  * @see net.pincette.util.StreamUtil#stream
  */

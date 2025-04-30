@@ -20,7 +20,7 @@ import javax.json.stream.JsonGenerator;
 /**
  * A JSON generator that forwards everything to a Jackson generator.
  *
- * @author Werner Donn\u00e9
+ * @author Werner Donné
  * @since 1.0
  */
 public class JacksonGenerator implements JsonGenerator {
@@ -40,10 +40,7 @@ public class JacksonGenerator implements JsonGenerator {
   }
 
   public JsonGenerator write(final String name, final JsonValue value) {
-    writeKey(name);
-    write(value);
-
-    return this;
+    return writeKey(name).write(value);
   }
 
   public JsonGenerator write(final String name, final String value) {
@@ -53,10 +50,7 @@ public class JacksonGenerator implements JsonGenerator {
   }
 
   public JsonGenerator write(final String name, final BigInteger value) {
-    writeKey(name);
-    write(value);
-
-    return this;
+    return writeKey(name).write(value);
   }
 
   public JsonGenerator write(final String name, final BigDecimal value) {
@@ -90,24 +84,15 @@ public class JacksonGenerator implements JsonGenerator {
   }
 
   public JsonGenerator write(final JsonValue value) {
-    switch (value.getValueType()) {
-      case ARRAY:
-        return write(value.asJsonArray());
-      case FALSE:
-        return write(false);
-      case OBJECT:
-        return write(value.asJsonObject());
-      case NULL:
-        return writeNull();
-      case NUMBER:
-        return write(asNumber(value));
-      case STRING:
-        return write(asString(value).getString());
-      case TRUE:
-        return write(true);
-      default:
-        return this;
-    }
+    return switch (value.getValueType()) {
+      case ARRAY -> write(value.asJsonArray());
+      case FALSE -> write(false);
+      case OBJECT -> write(value.asJsonObject());
+      case NULL -> writeNull();
+      case NUMBER -> write(asNumber(value));
+      case STRING -> write(asString(value).getString());
+      case TRUE -> write(true);
+    };
   }
 
   public JsonGenerator write(final String value) {
@@ -171,16 +156,17 @@ public class JacksonGenerator implements JsonGenerator {
   }
 
   public JsonGenerator writeEnd() {
-    switch (stack.pop()) {
-      case ARRAY:
+    return switch (stack.pop()) {
+      case ARRAY -> {
         tryToDoRethrow(generator::writeEndArray);
-        return this;
-      case OBJECT:
+        yield this;
+      }
+      case OBJECT -> {
         tryToDoRethrow(generator::writeEndObject);
-        return this;
-      default:
-        return this;
-    }
+        yield this;
+      }
+      default -> this;
+    };
   }
 
   public JsonGenerator writeKey(final String name) {
@@ -209,10 +195,7 @@ public class JacksonGenerator implements JsonGenerator {
   }
 
   public JsonGenerator writeStartArray(final String name) {
-    writeKey(name);
-    writeStartArray();
-
-    return this;
+    return writeKey(name).writeStartArray();
   }
 
   public JsonGenerator writeStartObject() {
@@ -223,9 +206,6 @@ public class JacksonGenerator implements JsonGenerator {
   }
 
   public JsonGenerator writeStartObject(final String name) {
-    writeKey(name);
-    writeStartObject();
-
-    return this;
+    return writeKey(name).writeStartObject();
   }
 }
