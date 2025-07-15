@@ -153,7 +153,7 @@ public class Validate {
 
   /**
    * The method validates <code>value</code>. If there are no errors <code>value</code> is returned
-   * unchanged. Otherwise the fields for which there is an error are replaced with an object
+   * unchanged. Otherwise, the fields for which there is an error are replaced with an object
    * containing the field "value" with the original value, the field "message" with an error message
    * and the field "_error", which is set to <code>true</code>. All ancestor objects will also have
    * the field _error set to <code>true</code>.
@@ -162,11 +162,11 @@ public class Validate {
    * @param context the context information which is passed to each validator.
    * @param validators maps dot-separated fields to validator functions.
    * @param messages maps dot-separated fields to error messages.
-   * @param mandatory the set of dot-separated fields that are must appear in <code>value</code>.
-   *     When a field has several segments this only says something about the lowest level. For
-   *     example, when the field "a.b" is present that "b" must be present when "a" is, but "a" as
-   *     such doesn't have to be present. If that is also required then the field "a" should also be
-   *     in the set.
+   * @param mandatory the set of dot-separated fields that must appear in <code>value</code>. When a
+   *     field has several segments, this only says something about the lowest level. For example,
+   *     when the field "a.b" is present, that "b" must be present when "a" is, but "a" as such
+   *     doesn't have to be present. If that is also required, then the field "a" should also be in
+   *     the set.
    * @param missingMessage a general error message for missing fields.
    * @return An annotated copy of <code>value</code> when there is at least one error, just <code>
    *     value</code> otherwise.

@@ -1,6 +1,5 @@
 package net.pincette.json;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.Optional.ofNullable;
@@ -10,7 +9,6 @@ import static net.pincette.json.Jackson.from;
 import static net.pincette.json.Jackson.to;
 import static net.pincette.util.Collections.union;
 import static net.pincette.util.Pair.pair;
-import static net.pincette.util.Util.tryToGetRethrow;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.schibsted.spt.data.jslt.Expression;
@@ -19,9 +17,7 @@ import com.schibsted.spt.data.jslt.Parser;
 import com.schibsted.spt.data.jslt.ResourceResolver;
 import com.schibsted.spt.data.jslt.impl.ClasspathResourceResolver;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Collection;
@@ -29,7 +25,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
@@ -42,30 +37,20 @@ import net.pincette.json.JsltCustom.CustomFunction;
  * @since 1.1
  */
 public class Jslt {
-  private static final String RESOURCE = "resource:";
   private static final Set<CustomFunction> customFunctions = new HashSet<>();
 
   private Jslt() {}
 
-  private static java.util.function.Function<JsonValue, JsonObject> asObject() {
-    return json ->
-        ofNullable(json).filter(JsonUtil::isObject).map(JsonValue::asJsonObject).orElse(null);
-  }
-
-  private static java.util.function.Function<JsonObject, JsonValue> asValue() {
-    return json -> json;
-  }
-
   public static Reader reader(final File file) {
-    return tryToGetRethrow(() -> reader(new FileInputStream(file))).orElse(null);
+    return Common.reader(file);
   }
 
   public static Reader reader(final InputStream in) {
-    return new InputStreamReader(in, UTF_8);
+    return Common.reader(in);
   }
 
   public static Reader readerResource(final String resource) {
-    return reader(Jslt.class.getResourceAsStream(resource));
+    return Common.readerResource(resource);
   }
 
   private static Set<CustomFunction> toCustom(final Collection<Function> functions) {
@@ -83,12 +68,8 @@ public class Jslt {
    * @return The transformer function.
    * @since 1.4
    */
-  @SuppressWarnings("java:S4276") // Not compatible.
   public static UnaryOperator<JsonObject> transformerObject(final Context context) {
-    final java.util.function.Function<JsonObject, JsonObject> transformer =
-        asObject().compose(transformerValue(context)).compose(asValue());
-
-    return transformer::apply;
+    return Common.transformerObject(transformerValue(context));
   }
 
   /**
@@ -119,18 +100,13 @@ public class Jslt {
    * Returns a reader for a JSLT script.
    *
    * @param jslt the JSLT script. If it starts with "resource:" the script is loaded as a class path
-   *     resource. If it denotes an existing file it will be loaded from that file. Otherwise it is
-   *     interpreted as a JSLT script.
+   *     resource. If it denotes an existing file, it will be loaded from that file. Otherwise, it
+   *     is interpreted as a JSLT script.
    * @return The transformer function.
    * @since 1.4
    */
   public static Reader tryReader(final String jslt) {
-    final Supplier<Reader> tryFile =
-        () -> new File(jslt).exists() ? reader(new File(jslt)) : new StringReader(jslt);
-
-    return jslt.startsWith(RESOURCE)
-        ? readerResource(jslt.substring(RESOURCE.length()))
-        : tryFile.get();
+    return Common.tryReader(jslt);
   }
 
   private static Map<String, JsonNode> variables(final Map<String, JsonValue> variables) {
@@ -142,28 +118,6 @@ public class Jslt {
                     .filter(pair -> pair.second != null)
                     .collect(toMap(pair -> pair.first, pair -> pair.second)))
         .orElseGet(Collections::emptyMap);
-  }
-
-  /**
-   * Resolves imported modules from a map.
-   *
-   * @since 1.3.5
-   */
-  public static class MapResolver implements ResourceResolver {
-    private final Map<String, String> map;
-
-    /**
-     * Creates the resolver with a map.
-     *
-     * @param map the keys are relative paths and the values are JSLT strings.
-     */
-    public MapResolver(final Map<String, String> map) {
-      this.map = map;
-    }
-
-    public Reader resolve(final String jslt) {
-      return ofNullable(map.get(jslt)).map(StringReader::new).orElse(null);
-    }
   }
 
   /**
@@ -215,7 +169,7 @@ public class Jslt {
     }
 
     /**
-     * Sets additional variables that can be address with <code>$$name</code>.
+     * Sets additional variables that can be addressed with <code>$name</code>.
      *
      * @param variables the variables.
      * @return The context.
@@ -223,6 +177,28 @@ public class Jslt {
      */
     public Context withVariables(final Map<String, JsonValue> variables) {
       return new Context(reader, functions, variables, resolver);
+    }
+  }
+
+  /**
+   * Resolves imported modules from a map.
+   *
+   * @since 1.3.5
+   */
+  public static class MapResolver implements ResourceResolver {
+    private final Map<String, String> map;
+
+    /**
+     * Creates the resolver with a map.
+     *
+     * @param map the keys are relative paths and the values are JSLT strings.
+     */
+    public MapResolver(final Map<String, String> map) {
+      this.map = map;
+    }
+
+    public Reader resolve(final String jslt) {
+      return ofNullable(map.get(jslt)).map(StringReader::new).orElse(null);
     }
   }
 }
