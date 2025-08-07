@@ -12,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.StringReader;
 import javax.json.JsonObject;
 import net.pincette.json.Jq.Context;
-import net.pincette.json.Jq.MapModuleLoader;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

@@ -6,7 +6,7 @@ module net.pincette.json {
   requires com.schibsted.spt.data.jslt;
   requires java.logging;
   requires com.fasterxml.jackson.dataformat.yaml;
-  requires jackson.jq;
+  requires net.thisptr.jackson.jq;
 
   exports net.pincette.json;
   exports net.pincette.json.filter;

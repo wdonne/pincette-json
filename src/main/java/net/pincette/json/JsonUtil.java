@@ -419,6 +419,7 @@ public class JsonUtil {
             .or(
                 Date.class::isInstance,
                 v -> provider.createValue(ofEpochMilli(((Date) v).getTime()).toString()))
+            .or(Instant.class::isInstance, v -> provider.createValue(((Instant) v).toString()))
             .or(Map.class::isInstance, v -> from((Map<String, ?>) v))
             .or(Stream.class::isInstance, v -> from((Stream<?>) v))
             .or(List.class::isInstance, v -> from((List<?>) v))
