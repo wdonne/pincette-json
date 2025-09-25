@@ -65,7 +65,7 @@ public class JsltCustom {
         array ->
             createValue(
                 new String(
-                    getDecoder().decode(asString(array.get(0)).getString().getBytes(US_ASCII)),
+                    getDecoder().decode(asString(array.getFirst()).getString().getBytes(US_ASCII)),
                     UTF_8)));
   }
 
@@ -83,7 +83,7 @@ public class JsltCustom {
         array ->
             createValue(
                 new String(
-                    getEncoder().encode(asString(array.get(0)).getString().getBytes(UTF_8)),
+                    getEncoder().encode(asString(array.getFirst()).getString().getBytes(UTF_8)),
                     US_ASCII)));
   }
 
@@ -149,7 +149,7 @@ public class JsltCustom {
         3,
         array ->
             Optional.of(array)
-                .map(a -> pair(a.get(0), a.get(1)))
+                .map(a -> pair(a.getFirst(), a.get(1)))
                 .filter(pair -> isObject(pair.first) && isString(pair.second))
                 .flatMap(
                     pair -> getValue(pair.first.asJsonObject(), asString(pair.second).getString()))
@@ -169,7 +169,7 @@ public class JsltCustom {
         1,
         1,
         array ->
-            Optional.of(array.get(0))
+            Optional.of(array.getFirst())
                 .filter(JsonUtil::isInstant)
                 .map(JsonUtil::asInstant)
                 .map(Instant::toEpochMilli)
@@ -215,7 +215,7 @@ public class JsltCustom {
         3,
         array ->
             Optional.of(array)
-                .map(a -> triple(a.get(0), a.get(1), a.get(2)))
+                .map(a -> triple(a.getFirst(), a.get(1), a.get(2)))
                 .filter(triple -> isObject(triple.first) && isString(triple.second))
                 .map(
                     triple ->
@@ -244,7 +244,7 @@ public class JsltCustom {
             createValue(
                 tryToGetRethrow(
                         () ->
-                            Optional.of(asString(array.get(0)).getString())
+                            Optional.of(asString(array.getFirst()).getString())
                                 .map(
                                     s ->
                                         s.substring(
@@ -272,8 +272,8 @@ public class JsltCustom {
         1,
         1,
         array ->
-            SideEffect.<JsonValue>run(() -> logger.info(string(array.get(0))))
-                .andThenGet(() -> array.get(0)));
+            SideEffect.<JsonValue>run(() -> logger.info(string(array.getFirst())))
+                .andThenGet(() -> array.getFirst()));
   }
 
   /**
@@ -289,7 +289,7 @@ public class JsltCustom {
         1,
         array ->
             createValue(
-                tryToGetRethrow(() -> decode(asString(array.get(0)).getString(), UTF_8))
+                tryToGetRethrow(() -> decode(asString(array.getFirst()).getString(), UTF_8))
                     .orElse(null)));
   }
 
@@ -306,7 +306,7 @@ public class JsltCustom {
         1,
         array ->
             createValue(
-                tryToGetRethrow(() -> encode(asString(array.get(0)).getString(), UTF_8))
+                tryToGetRethrow(() -> encode(asString(array.getFirst()).getString(), UTF_8))
                     .orElse(null)));
   }
 

@@ -70,7 +70,7 @@ public class Jq {
   private static JsonValue result(final List<JsonNode> result) {
     return Cases.<List<JsonNode>, JsonValue>withValue(result)
         .or(List::isEmpty, r -> NULL)
-        .or(r -> r.size() == 1, r -> to(r.get(0)))
+        .or(r -> r.size() == 1, r -> to(r.getFirst()))
         .get()
         .orElseGet(
             () ->
