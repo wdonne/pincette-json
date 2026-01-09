@@ -495,6 +495,14 @@ public class JsonUtil {
         .map(v -> v.getValueType() == TRUE);
   }
 
+  public static Optional<Double> getDouble(final JsonStructure json, final String jsonPointer) {
+    return getValue(json, jsonPointer).flatMap(JsonUtil::doubleValue);
+  }
+
+  public static Optional<Integer> getInt(final JsonStructure json, final String jsonPointer) {
+    return getValue(json, jsonPointer).flatMap(JsonUtil::intValue);
+  }
+
   public static Optional<Instant> getInstant(final JsonStructure json, final String jsonPointer) {
     return getValue(json, jsonPointer).filter(JsonUtil::isInstant).map(JsonUtil::asInstant);
   }
@@ -518,6 +526,10 @@ public class JsonUtil {
    */
   public static String getKey(final String path, final String pathDelimiter) {
     return getLastSegment(path, pathDelimiter).orElse(path);
+  }
+
+  public static Optional<Long> getLong(final JsonStructure json, final String jsonPointer) {
+    return getValue(json, jsonPointer).flatMap(JsonUtil::longValue);
   }
 
   public static Optional<Double> getNumber(final JsonStructure json, final String jsonPointer) {
