@@ -273,7 +273,7 @@ public class JsltCustom {
         1,
         array ->
             SideEffect.<JsonValue>run(() -> logger.info(string(array.getFirst())))
-                .andThenGet(() -> array.getFirst()));
+                .andThenGet(array::getFirst));
   }
 
   /**
