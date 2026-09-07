@@ -101,8 +101,6 @@ public class Jackson {
   }
 
   private static JsonValue toNumber(final JsonNode json) {
-    return json.isIntegralNumber()
-        ? createValue(json.longValue())
-        : createValue(json.decimalValue());
+    return createValue(json.isIntegralNumber() ? json.longValue() : json.decimalValue());
   }
 }
